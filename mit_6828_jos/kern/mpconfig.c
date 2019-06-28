@@ -71,8 +71,7 @@ struct mpproc
 #define MPIOINTR 0x03 // One per bus interrupt source
 #define MPLINTR 0x04  // One per system interrupt source
 
-static uint8_t
-sum(void *addr, int len)
+static uint8_t sum(void *addr, int len)
 {
 	int i, sum;
 
@@ -83,8 +82,7 @@ sum(void *addr, int len)
 }
 
 // Look for an MP structure in the len bytes at physical address addr.
-static struct mp *
-mpsearch1(physaddr_t a, int len)
+static struct mp *mpsearch1(physaddr_t a, int len)
 {
 	struct mp *mp = KADDR(a), *end = KADDR(a + len);
 
@@ -100,8 +98,7 @@ mpsearch1(physaddr_t a, int len)
 // 1) in the first KB of the EBDA;
 // 2) if there is no EBDA, in the last KB of system base memory;
 // 3) in the BIOS ROM between 0xE0000 and 0xFFFFF.
-static struct mp *
-mpsearch(void)
+static struct mp *mpsearch(void)
 {
 	uint8_t *bda;
 	uint32_t p;
@@ -134,8 +131,7 @@ mpsearch(void)
 // Search for an MP configuration table.  For now, don't accept the
 // default configurations (physaddr == 0).
 // Check for the correct signature, checksum, and version.
-static struct mpconf *
-mpconfig(struct mp **pmp)
+static struct mpconf *mpconfig(struct mp **pmp)
 {
 	struct mpconf *conf;
 	struct mp *mp;

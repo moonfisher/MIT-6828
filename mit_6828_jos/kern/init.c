@@ -52,11 +52,15 @@ void i386_init(void)
 	boot_aps(); //将初始化代码拷贝到MPENTRY_PADDR处，然后依次启动所有AP
 
 	// Start fs.
-	ENV_CREATE(fs_fs, ENV_TYPE_FS); //创建文件系统Env
+//    ENV_CREATE(fs_fs, ENV_TYPE_FS); //创建文件系统Env
+    extern uint8_t _binary_obj_fs_fs_start[];
+    env_create(_binary_obj_fs_fs_start, ENV_TYPE_FS);
 
 #if !defined(TEST_NO_NS)
 	// Start ns.
-	ENV_CREATE(net_ns, ENV_TYPE_NS); //create network Env
+//    ENV_CREATE(net_ns, ENV_TYPE_NS); //create network Env
+    extern uint8_t _binary_obj_net_ns_start[];
+    env_create(_binary_obj_net_ns_start, ENV_TYPE_NS);
 #endif
 
 #if defined(TEST)
@@ -64,7 +68,9 @@ void i386_init(void)
 	ENV_CREATE(TEST, ENV_TYPE_USER);
 #else
 	// Touch all you want.
-	ENV_CREATE(user_spawnhello, ENV_TYPE_USER);
+//    ENV_CREATE(user_spawnhello, ENV_TYPE_USER);
+    extern uint8_t _binary_obj_user_spawnhello_start[];
+    env_create(_binary_obj_user_spawnhello_start, ENV_TYPE_USER);
 #endif // TEST*
 
 	// Should not be necessary - drains keyboard because interrupt has given up.
@@ -80,8 +86,7 @@ void i386_init(void)
 void *mpentry_kstack;
 
 // Start the non-boot (AP) processors.
-static void
-boot_aps(void)
+static void boot_aps(void)
 {
 	extern unsigned char mpentry_start[], mpentry_end[];
 	void *code;
@@ -103,7 +108,7 @@ boot_aps(void)
 		lapic_startap(c->cpu_id, PADDR(code));
 		// Wait for the CPU to finish some basic setup in mp_main()
 		while (c->cpu_status != CPU_STARTED)
-			;
+            ;
 	}
 }
 

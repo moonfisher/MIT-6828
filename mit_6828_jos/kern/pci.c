@@ -36,11 +36,7 @@ struct pci_driver pci_attach_vendor[] = {
 	{0, 0, 0},
 };
 
-static void
-pci_conf1_set_addr(uint32_t bus,
-				   uint32_t dev,
-				   uint32_t func,
-				   uint32_t offset)
+static void pci_conf1_set_addr(uint32_t bus, uint32_t dev, uint32_t func, uint32_t offset)
 {
 	assert(bus < 256);
 	assert(dev < 32);
@@ -53,23 +49,19 @@ pci_conf1_set_addr(uint32_t bus,
 	outl(pci_conf1_addr_ioport, v);
 }
 
-static uint32_t
-pci_conf_read(struct pci_func *f, uint32_t off)
+static uint32_t pci_conf_read(struct pci_func *f, uint32_t off)
 {
 	pci_conf1_set_addr(f->bus->busno, f->dev, f->func, off);
 	return inl(pci_conf1_data_ioport);
 }
 
-static void
-pci_conf_write(struct pci_func *f, uint32_t off, uint32_t v)
+static void pci_conf_write(struct pci_func *f, uint32_t off, uint32_t v)
 {
 	pci_conf1_set_addr(f->bus->busno, f->dev, f->func, off);
 	outl(pci_conf1_data_ioport, v);
 }
 
-static int __attribute__((warn_unused_result))
-pci_attach_match(uint32_t key1, uint32_t key2,
-				 struct pci_driver *list, struct pci_func *pcif)
+static int __attribute__((warn_unused_result)) pci_attach_match(uint32_t key1, uint32_t key2, struct pci_driver *list, struct pci_func *pcif)
 {
 	uint32_t i;
 
@@ -89,44 +81,32 @@ pci_attach_match(uint32_t key1, uint32_t key2,
 	return 0;
 }
 
-static int
-pci_attach(struct pci_func *f)
+static int pci_attach(struct pci_func *f)
 {
-	return pci_attach_match(PCI_CLASS(f->dev_class),
-							PCI_SUBCLASS(f->dev_class),
-							&pci_attach_class[0], f) ||
-		   pci_attach_match(PCI_VENDOR(f->dev_id),
-							PCI_PRODUCT(f->dev_id),
-							&pci_attach_vendor[0], f);
+	return pci_attach_match(PCI_CLASS(f->dev_class), PCI_SUBCLASS(f->dev_class), &pci_attach_class[0], f) || pci_attach_match(PCI_VENDOR(f->dev_id), PCI_PRODUCT(f->dev_id), &pci_attach_vendor[0], f);
 }
 
 static const char *pci_class[] =
-	{
-		[0x0] = "Unknown",
-		[0x1] = "Storage controller",
-		[0x2] = "Network controller",
-		[0x3] = "Display controller",
-		[0x4] = "Multimedia device",
-		[0x5] = "Memory controller",
-		[0x6] = "Bridge device",
+{
+    [0x0] = "Unknown",
+    [0x1] = "Storage controller",
+    [0x2] = "Network controller",
+    [0x3] = "Display controller",
+    [0x4] = "Multimedia device",
+    [0x5] = "Memory controller",
+    [0x6] = "Bridge device",
 };
 
-static void
-pci_print_func(struct pci_func *f)
+static void pci_print_func(struct pci_func *f)
 {
 	const char *class = pci_class[0];
 	if (PCI_CLASS(f->dev_class) < ARRAY_SIZE(pci_class))
 		class = pci_class[PCI_CLASS(f->dev_class)];
 
-	cprintf("PCI: %02x:%02x.%d: %04x:%04x: class: %x.%x (%s) irq: %d\n",
-			f->bus->busno, f->dev, f->func,
-			PCI_VENDOR(f->dev_id), PCI_PRODUCT(f->dev_id),
-			PCI_CLASS(f->dev_class), PCI_SUBCLASS(f->dev_class), class,
-			f->irq_line);
+	cprintf("PCI: %02x:%02x.%d: %04x:%04x: class: %x.%x (%s) irq: %d\n", f->bus->busno, f->dev, f->func, PCI_VENDOR(f->dev_id), PCI_PRODUCT(f->dev_id), PCI_CLASS(f->dev_class), PCI_SUBCLASS(f->dev_class), class, f->irq_line);
 }
 
-static int
-pci_scan_bus(struct pci_bus *bus)
+static int pci_scan_bus(struct pci_bus *bus)
 {
 	int totaldev = 0;
 	struct pci_func df;
@@ -164,8 +144,7 @@ pci_scan_bus(struct pci_bus *bus)
 	return totaldev;
 }
 
-static int
-pci_bridge_attach(struct pci_func *pcif)
+static int pci_bridge_attach(struct pci_func *pcif)
 {
 	uint32_t ioreg = pci_conf_read(pcif, PCI_BRIDGE_STATIO_REG);
 	uint32_t busreg = pci_conf_read(pcif, PCI_BRIDGE_BUS_REG);
@@ -196,15 +175,11 @@ pci_bridge_attach(struct pci_func *pcif)
 
 void pci_func_enable(struct pci_func *f)
 {
-	pci_conf_write(f, PCI_COMMAND_STATUS_REG,
-				   PCI_COMMAND_IO_ENABLE |
-					   PCI_COMMAND_MEM_ENABLE |
-					   PCI_COMMAND_MASTER_ENABLE);
+	pci_conf_write(f, PCI_COMMAND_STATUS_REG, PCI_COMMAND_IO_ENABLE | PCI_COMMAND_MEM_ENABLE | PCI_COMMAND_MASTER_ENABLE);
 
 	uint32_t bar_width;
 	uint32_t bar;
-	for (bar = PCI_MAPREG_START; bar < PCI_MAPREG_END;
-		 bar += bar_width)
+	for (bar = PCI_MAPREG_START; bar < PCI_MAPREG_END; bar += bar_width)
 	{
 		uint32_t oldv = pci_conf_read(f, bar);
 

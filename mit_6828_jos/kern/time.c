@@ -17,8 +17,7 @@ void time_tick(void)
 		panic("time_tick: time overflowed");
 }
 
-unsigned int
-time_msec(void)
+unsigned int time_msec(void)
 {
 	return ticks * 10;
 }

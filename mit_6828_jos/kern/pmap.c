@@ -24,14 +24,12 @@ static struct PageInfo *page_free_list; // Free list of physical pages
 // Detect machine's physical memory setup.
 // --------------------------------------------------------------
 
-static int
-nvram_read(int r)
+static int nvram_read(int r)
 {
 	return mc146818_read(r) | (mc146818_read(r + 1) << 8);
 }
 
-static void
-i386_detect_memory(void)
+static void i386_detect_memory(void)
 {
 	size_t basemem, extmem, ext16mem, totalmem;
 
@@ -53,8 +51,7 @@ i386_detect_memory(void)
 	npages = totalmem / (PGSIZE / 1024);
 	npages_basemem = basemem / (PGSIZE / 1024);
 
-	cprintf("Physical memory: %uK available, base = %uK, extended = %uK\n",
-			totalmem, basemem, totalmem - basemem);
+	cprintf("Physical memory: %uK available, base = %uK, extended = %uK\n", totalmem, basemem, totalmem - basemem);
 }
 
 // --------------------------------------------------------------
@@ -84,8 +81,7 @@ static void check_page_installed_pgdir(void);
 // before the page_free_list list has been set up.
 // Note that when this function is called, we are still using entry_pgdir,
 // which only maps the first 4MB of physical memory.
-static void *
-boot_alloc(uint32_t n)
+static void *boot_alloc(uint32_t n)
 {
 	static char *nextfree; // virtual address of next byte of free memory
 	char *result;
@@ -133,7 +129,7 @@ void mem_init(void)
 
 	//////////////////////////////////////////////////////////////////////
 	// create initial page directory.
-	kern_pgdir = (pde_t *)boot_alloc(PGSIZE); //分配一个页的空间保存页目录表
+    kern_pgdir = (pde_t *)boot_alloc(PGSIZE); //分配一个页的空间保存页目录表
 	memset(kern_pgdir, 0, PGSIZE);
 
 	//////////////////////////////////////////////////////////////////////
@@ -143,8 +139,9 @@ void mem_init(void)
 	// following line.)
 
 	// Permissions: kernel R, user R
-	kern_pgdir[PDX(UVPT)] = PADDR(kern_pgdir) | PTE_U | PTE_P; //页目录表的低PDX(UVPT)项指向页目录本身，
-															   //也就是说虚拟地址UVPT开始处的0x400000字节映射到物理地址PADDR(kern_pgdir)处
+    kern_pgdir[PDX(UVPT)] = PADDR(kern_pgdir) | PTE_U | PTE_P;
+    // 页目录表的低PDX(UVPT)项指向页目录本身，
+    // 也就是说虚拟地址UVPT开始处的0x400000字节映射到物理地址PADDR(kern_pgdir)处
 
 	//////////////////////////////////////////////////////////////////////
 	// Allocate an array of npages 'struct PageInfo's and store it in 'pages'.
@@ -153,7 +150,8 @@ void mem_init(void)
 	// array.  'npages' is the number of physical pages in memory.  Use memset
 	// to initialize all fields of each struct PageInfo to 0.
 	// Your code goes here:
-	pages = (struct PageInfo *)boot_alloc(sizeof(struct PageInfo) * npages); //分配足够大的空间(PGSIZE的倍数)保存pages数组
+    pages = (struct PageInfo *)boot_alloc(sizeof(struct PageInfo) * npages);
+    //分配足够大的空间(PGSIZE的倍数)保存pages数组
 	memset(pages, 0, sizeof(struct PageInfo) * npages);
 
 	//////////////////////////////////////////////////////////////////////
@@ -251,8 +249,7 @@ void mem_init(void)
 // Modify mappings in kern_pgdir to support SMP
 //   - Map the per-CPU stacks in the region [KSTACKTOP-PTSIZE, KSTACKTOP)
 //
-static void
-mem_init_mp(void)
+static void mem_init_mp(void)
 {
 	// Map per-CPU stacks starting at KSTACKTOP, for up to 'NCPU' CPUs.
 	//
@@ -272,11 +269,7 @@ mem_init_mp(void)
 	// LAB 4: Your code here:
 	for (int i = 0; i < NCPU; i++)
 	{
-		boot_map_region(kern_pgdir,
-						KSTACKTOP - KSTKSIZE - i * (KSTKSIZE + KSTKGAP),
-						KSTKSIZE,
-						PADDR(percpu_kstacks[i]),
-						PTE_W);
+		boot_map_region(kern_pgdir, KSTACKTOP - KSTKSIZE - i * (KSTKSIZE + KSTKGAP), KSTKSIZE, PADDR(percpu_kstacks[i]), PTE_W);
 	}
 }
 
@@ -361,8 +354,7 @@ void page_init(void)
 // Returns NULL if out of free memory.
 //
 // Hint: use page2kva and memset
-struct PageInfo *
-page_alloc(int alloc_flags)
+struct PageInfo *page_alloc(int alloc_flags)
 {
 	struct PageInfo *ret = page_free_list;
 	if (ret == NULL)
@@ -427,8 +419,7 @@ void page_decref(struct PageInfo *pp)
 // Hint 3: look at inc/mmu.h for useful macros that manipulate page
 // table and page directory entries.
 //
-pte_t *
-pgdir_walk(pde_t *pgdir, const void *va, int create)
+pte_t *pgdir_walk(pde_t *pgdir, const void *va, int create)
 {
 	// Fill this function in
 	pde_t *pde_ptr = pgdir + PDX(va);
@@ -465,8 +456,7 @@ pgdir_walk(pde_t *pgdir, const void *va, int create)
 // mapped pages.
 //
 // Hint: the TA solution uses pgdir_walk
-static void
-boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm)
+static void boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm)
 {
 	// Fill this function in
 	size_t pgs = size / PGSIZE;
@@ -543,8 +533,7 @@ int page_insert(pde_t *pgdir, struct PageInfo *pp, void *va, int perm)
 //
 // Hint: the TA solution uses pgdir_walk and pa2page.
 //
-struct PageInfo *
-page_lookup(pde_t *pgdir, void *va, pte_t **pte_store)
+struct PageInfo *page_lookup(pde_t *pgdir, void *va, pte_t **pte_store)
 {
 	// Fill this function in
 	struct PageInfo *pp;
@@ -611,8 +600,7 @@ void tlb_invalidate(pde_t *pgdir, void *va)
 // location.  Return the base of the reserved region.  size does *not*
 // have to be multiple of PGSIZE.
 //
-void *
-mmio_map_region(physaddr_t pa, size_t size)
+void *mmio_map_region(physaddr_t pa, size_t size)
 {
 	// Where to start the next region.  Initially, this is the
 	// beginning of the MMIO region.  Because this is static, its
@@ -713,8 +701,7 @@ void user_mem_assert(struct Env *env, const void *va, size_t len, int perm)
 //
 // Check that the pages on the page_free_list are reasonable.
 //
-static void
-check_page_free_list(bool only_low_memory)
+static void check_page_free_list(bool only_low_memory)
 {
 	struct PageInfo *pp;
 	unsigned pdx_limit = only_low_memory ? 1 : NPDENTRIES;
@@ -780,8 +767,7 @@ check_page_free_list(bool only_low_memory)
 // Check the physical page allocator (page_alloc(), page_free(),
 // and page_init()).
 //
-static void
-check_page_alloc(void)
+static void check_page_alloc(void)
 {
 	struct PageInfo *pp, *pp0, *pp1, *pp2;
 	int nfree;
@@ -861,9 +847,7 @@ check_page_alloc(void)
 // This function doesn't test every corner case,
 // but it is a pretty good sanity check.
 //
-
-static void
-check_kern_pgdir(void)
+static void check_kern_pgdir(void)
 {
 	uint32_t i, n;
 	pde_t *pgdir;
@@ -926,8 +910,7 @@ check_kern_pgdir(void)
 // this functionality for us!  We define our own version to help check
 // the check_kern_pgdir() function; it shouldn't be used elsewhere.
 
-static physaddr_t
-check_va2pa(pde_t *pgdir, uintptr_t va)
+static physaddr_t check_va2pa(pde_t *pgdir, uintptr_t va)
 {
 	pte_t *p;
 
@@ -941,8 +924,7 @@ check_va2pa(pde_t *pgdir, uintptr_t va)
 }
 
 // check page_insert, page_remove, &c
-static void
-check_page(void)
+static void check_page(void)
 {
 	struct PageInfo *pp, *pp0, *pp1, *pp2;
 	struct PageInfo *fl;
@@ -1118,8 +1100,7 @@ check_page(void)
 }
 
 // check page_insert, page_remove, &c, with an installed kern_pgdir
-static void
-check_page_installed_pgdir(void)
+static void check_page_installed_pgdir(void)
 {
 	struct PageInfo *pp, *pp0, *pp1, *pp2;
 	struct PageInfo *fl;

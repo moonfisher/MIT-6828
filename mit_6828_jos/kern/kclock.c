@@ -6,8 +6,7 @@
 
 #include <kern/kclock.h>
 
-unsigned
-mc146818_read(unsigned reg)
+unsigned mc146818_read(unsigned reg)
 {
 	outb(IO_RTC, reg);
 	return inb(IO_RTC + 1);

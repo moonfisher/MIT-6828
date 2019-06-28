@@ -45,8 +45,7 @@
 physaddr_t lapicaddr; // Initialized in mpconfig.c
 volatile uint32_t *lapic;
 
-static void
-lapicw(int index, int value)
+static void lapicw(int index, int value)
 {
 	lapic[index] = value;
 	lapic[ID]; // wait for write to finish, by reading
@@ -126,8 +125,7 @@ void lapic_eoi(void)
 
 // Spin for a given number of microseconds.
 // On real hardware would want to tune this dynamically.
-static void
-microdelay(int us)
+static void microdelay(int us)
 {
 }
 
