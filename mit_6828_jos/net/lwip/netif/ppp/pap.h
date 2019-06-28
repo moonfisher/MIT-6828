@@ -60,8 +60,7 @@
 /*
  * Packet header = Code, id, length.
  */
-#define UPAP_HEADERLEN (sizeof (u_char) + sizeof (u_char) + sizeof (u_short))
-
+#define UPAP_HEADERLEN (sizeof(u_char) + sizeof(u_char) + sizeof(u_short))
 
 /*
  * UPAP codes.
@@ -74,22 +73,21 @@
  * Client states.
  */
 #define UPAPCS_INITIAL 0 /* Connection down */
-#define UPAPCS_CLOSED  1 /* Connection up, haven't requested auth */
+#define UPAPCS_CLOSED 1  /* Connection up, haven't requested auth */
 #define UPAPCS_PENDING 2 /* Connection down, have requested auth */
 #define UPAPCS_AUTHREQ 3 /* We've sent an Authenticate-Request */
-#define UPAPCS_OPEN    4 /* We've received an Ack */
+#define UPAPCS_OPEN 4    /* We've received an Ack */
 #define UPAPCS_BADAUTH 5 /* We've received a Nak */
 
 /*
  * Server states.
  */
 #define UPAPSS_INITIAL 0 /* Connection down */
-#define UPAPSS_CLOSED  1 /* Connection up, haven't requested auth */
+#define UPAPSS_CLOSED 1  /* Connection up, haven't requested auth */
 #define UPAPSS_PENDING 2 /* Connection down, have requested auth */
-#define UPAPSS_LISTEN  3 /* Listening for an Authenticate */
-#define UPAPSS_OPEN    4 /* We've sent an Ack */
+#define UPAPSS_LISTEN 3  /* Listening for an Authenticate */
+#define UPAPSS_OPEN 4    /* We've sent an Ack */
 #define UPAPSS_BADAUTH 5 /* We've sent a Nak */
-
 
 /************************
 *** PUBLIC DATA TYPES ***
@@ -98,7 +96,8 @@
 /*
  * Each interface is described by upap structure.
  */
-typedef struct upap_state {
+typedef struct upap_state
+{
   int us_unit;           /* Interface unit number */
   const char *us_user;   /* User */
   int us_userlen;        /* User length */
@@ -113,7 +112,6 @@ typedef struct upap_state {
   int us_reqtimeout;     /* Time to wait for auth-req from peer */
 } upap_state;
 
-
 /***********************
 *** PUBLIC FUNCTIONS ***
 ***********************/
@@ -121,8 +119,8 @@ typedef struct upap_state {
 extern upap_state upap[];
 
 void upap_setloginpasswd(int unit, const char *luser, const char *lpassword);
-void upap_authwithpeer  (int, char *, char *);
-void upap_authpeer      (int);
+void upap_authwithpeer(int, char *, char *);
+void upap_authpeer(int);
 
 extern struct protent pap_protent;
 

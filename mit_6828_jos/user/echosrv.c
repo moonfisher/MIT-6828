@@ -5,7 +5,7 @@
 #define PORT 7
 
 #define BUFFSIZE 32
-#define MAXPENDING 5    // Max connection requests
+#define MAXPENDING 5 // Max connection requests
 
 static void
 die(char *m)
@@ -14,8 +14,7 @@ die(char *m)
 	exit();
 }
 
-void
-handle_client(int sock)
+void handle_client(int sock)
 {
 	char buffer[BUFFSIZE];
 	int received = -1;
@@ -24,7 +23,8 @@ handle_client(int sock)
 		die("Failed to receive initial bytes from client");
 
 	// Send bytes and check for more incoming data in loop
-	while (received > 0) {
+	while (received > 0)
+	{
 		// Send back received data
 		if (write(sock, buffer, received) != received)
 			die("Failed to send bytes to client");
@@ -36,8 +36,7 @@ handle_client(int sock)
 	close(sock);
 }
 
-void
-umain(int argc, char **argv)
+void umain(int argc, char **argv)
 {
 	int serversock, clientsock;
 	struct sockaddr_in echoserver, echoclient;
@@ -52,16 +51,17 @@ umain(int argc, char **argv)
 	cprintf("opened socket\n");
 
 	// Construct the server sockaddr_in structure
-	memset(&echoserver, 0, sizeof(echoserver));       // Clear struct
-	echoserver.sin_family = AF_INET;                  // Internet/IP
-	echoserver.sin_addr.s_addr = htonl(INADDR_ANY);   // IP address
-	echoserver.sin_port = htons(PORT);		  // server port
+	memset(&echoserver, 0, sizeof(echoserver));		// Clear struct
+	echoserver.sin_family = AF_INET;				// Internet/IP
+	echoserver.sin_addr.s_addr = htonl(INADDR_ANY); // IP address
+	echoserver.sin_port = htons(PORT);				// server port
 
 	cprintf("trying to bind\n");
 
 	// Bind the server socket
-	if (bind(serversock, (struct sockaddr *) &echoserver,
-		 sizeof(echoserver)) < 0) {
+	if (bind(serversock, (struct sockaddr *)&echoserver,
+			 sizeof(echoserver)) < 0)
+	{
 		die("Failed to bind the server socket");
 	}
 
@@ -72,12 +72,14 @@ umain(int argc, char **argv)
 	cprintf("bound\n");
 
 	// Run until canceled
-	while (1) {
+	while (1)
+	{
 		unsigned int clientlen = sizeof(echoclient);
 		// Wait for client connection
 		if ((clientsock =
-		     accept(serversock, (struct sockaddr *) &echoclient,
-			    &clientlen)) < 0) {
+				 accept(serversock, (struct sockaddr *)&echoclient,
+						&clientlen)) < 0)
+		{
 			die("Failed to accept client connection");
 		}
 		cprintf("Client connected: %s\n", inet_ntoa(echoclient.sin_addr));
@@ -85,5 +87,4 @@ umain(int argc, char **argv)
 	}
 
 	close(serversock);
-
 }

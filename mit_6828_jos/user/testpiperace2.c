@@ -1,8 +1,7 @@
 
 #include <inc/lib.h>
 
-void
-umain(int argc, char **argv)
+void umain(int argc, char **argv)
 {
 	int p[2], r, i;
 	struct Fd *fd;
@@ -13,12 +12,14 @@ umain(int argc, char **argv)
 		panic("pipe: %e", r);
 	if ((r = fork()) < 0)
 		panic("fork: %e", r);
-	if (r == 0) {
+	if (r == 0)
+	{
 		// child just dups and closes repeatedly,
 		// yielding so the parent can see
 		// the fd state between the two.
 		close(p[1]);
-		for (i = 0; i < 200; i++) {
+		for (i = 0; i < 200; i++)
+		{
 			if (i % 10 == 0)
 				cprintf("%d.", i);
 			// dup, then close.  yield so that other guy will
@@ -54,7 +55,8 @@ umain(int argc, char **argv)
 	//
 	kid = &envs[ENVX(r)];
 	while (kid->env_status == ENV_RUNNABLE)
-		if (pipeisclosed(p[0]) != 0) {
+		if (pipeisclosed(p[0]) != 0)
+		{
 			cprintf("\nRACE: pipe appears closed\n");
 			sys_env_destroy(r);
 			exit();
@@ -64,6 +66,6 @@ umain(int argc, char **argv)
 		panic("somehow the other end of p[0] got closed!");
 	if ((r = fd_lookup(p[0], &fd)) < 0)
 		panic("cannot look up p[0]: %e", r);
-	(void) fd2data(fd);
+	(void)fd2data(fd);
 	cprintf("race didn't happen\n");
 }

@@ -3,8 +3,7 @@
 
 extern union Nsipc nsipcbuf;
 
-void
-output(envid_t ns_envid)
+void output(envid_t ns_envid)
 {
 	binaryname = "ns_output";
 
@@ -15,16 +14,19 @@ output(envid_t ns_envid)
 	int perm;
 	int32_t req;
 
-	while (1) {
+	while (1)
+	{
 		req = ipc_recv((envid_t *)&whom, &nsipcbuf, &perm);
-		if (req != NSREQ_OUTPUT) {
+		if (req != NSREQ_OUTPUT)
+		{
 			cprintf("not a nsreq output\n");
 			continue;
 		}
 
-    	struct jif_pkt *pkt = &(nsipcbuf.pkt);
-    	while (sys_pkt_send(pkt->jp_data, pkt->jp_len) < 0) {
-       		sys_yield();
-    	}	
+		struct jif_pkt *pkt = &(nsipcbuf.pkt);
+		while (sys_pkt_send(pkt->jp_data, pkt->jp_len) < 0)
+		{
+			sys_yield();
+		}
 	}
 }

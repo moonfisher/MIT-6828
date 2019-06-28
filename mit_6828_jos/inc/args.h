@@ -72,7 +72,8 @@ char *argvalue(struct Argstate *);
 //	argument '-r'
 //	argument 'duh'
 
-struct Argstate {
+struct Argstate
+{
 	int *argc;
 	const char **argv;
 	const char *curarg;

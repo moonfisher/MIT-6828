@@ -3,16 +3,14 @@
 
 static unsigned int ticks;
 
-void
-time_init(void)
+void time_init(void)
 {
 	ticks = 0;
 }
 
 // This should be called once per timer interrupt.  A timer interrupt
 // fires every 10 ms.
-void
-time_tick(void)
+void time_tick(void)
 {
 	ticks++;
 	if (ticks * 10 < ticks)

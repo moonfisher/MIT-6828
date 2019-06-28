@@ -35,11 +35,12 @@
 #include "lwip/opt.h"
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-/* Modules initialization */
-void lwip_init(void);
+    /* Modules initialization */
+    void lwip_init(void);
 
 #ifdef __cplusplus
 }

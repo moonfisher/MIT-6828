@@ -6,8 +6,7 @@
 
 envid_t dumbfork(void);
 
-void
-umain(int argc, char **argv)
+void umain(int argc, char **argv)
 {
 	envid_t who;
 	int i;
@@ -16,24 +15,24 @@ umain(int argc, char **argv)
 	who = dumbfork();
 
 	// print a message and yield to the other a few times
-	for (i = 0; i < (who ? 10 : 20); i++) {
+	for (i = 0; i < (who ? 10 : 20); i++)
+	{
 		cprintf("%d: I am the %s!\n", i, who ? "parent" : "child");
 		sys_yield();
 	}
 }
 
-void
-duppage(envid_t dstenv, void *addr)
+void duppage(envid_t dstenv, void *addr)
 {
 	int r;
 
 	// This is NOT what you should do in your fork.
-	if ((r = sys_page_alloc(dstenv, addr, PTE_P|PTE_U|PTE_W)) < 0)
+	if ((r = sys_page_alloc(dstenv, addr, PTE_P | PTE_U | PTE_W)) < 0)
 		panic("sys_page_alloc: %e", r);
-	if ((r = sys_page_map(dstenv, addr, 0, UTEMP, PTE_P|PTE_U|PTE_W)) < 0)	//这里第三个参数0代表当前用户环境，具体看envid2env()实现。
-		panic("sys_page_map: %e", r);				//效果是使当前环境UTEMP指向和dstenv环境addr相同的内存处
-	memmove(UTEMP, addr, PGSIZE);					//将当前环境地址addr处的一页拷贝到当前环境地址UTMEP处（当前环境地址UTEMP和dstenv环境地址addr共享同一物理页）
-	if ((r = sys_page_unmap(0, UTEMP)) < 0)			//效果就是当前环境地址addr和dstenv环境地址addr指向的一页的内容是一样的，但是它们不是同一物理页
+	if ((r = sys_page_map(dstenv, addr, 0, UTEMP, PTE_P | PTE_U | PTE_W)) < 0) //这里第三个参数0代表当前用户环境，具体看envid2env()实现。
+		panic("sys_page_map: %e", r);										   //效果是使当前环境UTEMP指向和dstenv环境addr相同的内存处
+	memmove(UTEMP, addr, PGSIZE);											   //将当前环境地址addr处的一页拷贝到当前环境地址UTMEP处（当前环境地址UTEMP和dstenv环境地址addr共享同一物理页）
+	if ((r = sys_page_unmap(0, UTEMP)) < 0)									   //效果就是当前环境地址addr和dstenv环境地址addr指向的一页的内容是一样的，但是它们不是同一物理页
 		panic("sys_page_unmap: %e", r);
 }
 
@@ -53,7 +52,8 @@ dumbfork(void)
 	envid = sys_exofork();
 	if (envid < 0)
 		panic("sys_exofork: %e", envid);
-	if (envid == 0) {
+	if (envid == 0)
+	{
 		// We're the child.
 		// The copied value of the global variable 'thisenv'
 		// is no longer valid (it refers to the parent!).
@@ -65,7 +65,7 @@ dumbfork(void)
 	// We're the parent.
 	// Eagerly copy our entire address space into the child.
 	// This is NOT what you should do in your fork implementation.
-	for (addr = (uint8_t*) UTEXT; addr < end; addr += PGSIZE)
+	for (addr = (uint8_t *)UTEXT; addr < end; addr += PGSIZE)
 		duppage(envid, addr);
 
 	// Also copy the stack we are currently running on.
@@ -77,4 +77,3 @@ dumbfork(void)
 
 	return envid;
 }
-

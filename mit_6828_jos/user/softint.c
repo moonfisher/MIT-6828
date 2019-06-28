@@ -2,9 +2,7 @@
 
 #include <inc/lib.h>
 
-void
-umain(int argc, char **argv)
+void umain(int argc, char **argv)
 {
-	asm volatile("int $14");	// page fault
+	asm volatile("int $14"); // page fault
 }
-

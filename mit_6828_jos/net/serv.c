@@ -33,7 +33,8 @@ struct netif nif;
 
 #define debug 0
 
-struct timer_thread {
+struct timer_thread
+{
 	uint32_t msec;
 	void (*func)(void);
 	const char *name;
@@ -48,18 +49,21 @@ static envid_t input_envid;
 static envid_t output_envid;
 
 static bool buse[QUEUE_SIZE];
-static int next_i(int i) { return (i+1) % QUEUE_SIZE; }
-static int prev_i(int i) { return (i ? i-1 : QUEUE_SIZE-1); }
+static int next_i(int i) { return (i + 1) % QUEUE_SIZE; }
+static int prev_i(int i) { return (i ? i - 1 : QUEUE_SIZE - 1); }
 
 static void *
-get_buffer(void) {
+get_buffer(void)
+{
 	void *va;
 
 	int i;
 	for (i = 0; i < QUEUE_SIZE; i++)
-		if (!buse[i]) break;
+		if (!buse[i])
+			break;
 
-	if (i == QUEUE_SIZE) {
+	if (i == QUEUE_SIZE)
+	{
 		panic("NS: buffer overflow");
 		return 0;
 	}
@@ -71,24 +75,25 @@ get_buffer(void) {
 }
 
 static void
-put_buffer(void *va) {
+put_buffer(void *va)
+{
 	int i = ((uint32_t)va - REQVA) / PGSIZE;
 	buse[i] = 0;
 }
 
 static void
 lwip_init(struct netif *nif, void *if_state,
-	  uint32_t init_addr, uint32_t init_mask, uint32_t init_gw)
+		  uint32_t init_addr, uint32_t init_mask, uint32_t init_gw)
 {
 	struct ip_addr ipaddr, netmask, gateway;
-	ipaddr.addr  = init_addr;
+	ipaddr.addr = init_addr;
 	netmask.addr = init_mask;
 	gateway.addr = init_gw;
 
 	if (0 == netif_add(nif, &ipaddr, &netmask, &gateway,
-			   if_state,
-			   jif_init,
-			   ip_input))
+					   if_state,
+					   jif_init,
+					   ip_input))
 		panic("lwip_init: error in netif_add\n");
 
 	netif_set_default(nif);
@@ -98,9 +103,10 @@ lwip_init(struct netif *nif, void *if_state,
 static void __attribute__((noreturn))
 net_timer(uint32_t arg)
 {
-	struct timer_thread *t = (struct timer_thread *) arg;
+	struct timer_thread *t = (struct timer_thread *)arg;
 
-	for (;;) {
+	for (;;)
+	{
 		uint32_t cur = sys_time_msec();
 
 		lwip_core_lock();
@@ -130,8 +136,7 @@ tcpip_init_done(void *arg)
 	thread_wakeup(done);
 }
 
-void
-serve_init(uint32_t ipaddr, uint32_t netmask, uint32_t gw)
+void serve_init(uint32_t ipaddr, uint32_t netmask, uint32_t gw)
 {
 	int r;
 	lwip_core_lock();
@@ -150,10 +155,10 @@ serve_init(uint32_t ipaddr, uint32_t netmask, uint32_t gw)
 
 	struct in_addr ia = {ipaddr};
 	cprintf("ns: %02x:%02x:%02x:%02x:%02x:%02x"
-		" bound to static IP %s\n",
-		nif.hwaddr[0], nif.hwaddr[1], nif.hwaddr[2],
-		nif.hwaddr[3], nif.hwaddr[4], nif.hwaddr[5],
-		inet_ntoa(ia));
+			" bound to static IP %s\n",
+			nif.hwaddr[0], nif.hwaddr[1], nif.hwaddr[2],
+			nif.hwaddr[3], nif.hwaddr[4], nif.hwaddr[5],
+			inet_ntoa(ia));
 
 	lwip_core_unlock();
 
@@ -161,10 +166,12 @@ serve_init(uint32_t ipaddr, uint32_t netmask, uint32_t gw)
 }
 
 static void
-process_timer(envid_t envid) {
+process_timer(envid_t envid)
+{
 	uint32_t start, now, to;
 
-	if (envid != timer_envid) {
+	if (envid != timer_envid)
+	{
 		cprintf("NS: received timer interrupt from envid %x not timer env\n", envid);
 		return;
 	}
@@ -177,31 +184,34 @@ process_timer(envid_t envid) {
 	ipc_send(envid, to, 0, 0);
 }
 
-struct st_args {
+struct st_args
+{
 	int32_t reqno;
 	uint32_t whom;
 	union Nsipc *req;
 };
 
 static void
-serve_thread(uint32_t a) {
+serve_thread(uint32_t a)
+{
 	struct st_args *args = (struct st_args *)a;
 	union Nsipc *req = args->req;
 	int r;
 
-	switch (args->reqno) {
+	switch (args->reqno)
+	{
 	case NSREQ_ACCEPT:
 	{
 		struct Nsret_accept ret;
 		ret.ret_addrlen = req->accept.req_addrlen;
 		r = lwip_accept(req->accept.req_s, &ret.ret_addr,
-				&ret.ret_addrlen);
+						&ret.ret_addrlen);
 		memmove(req, &ret, sizeof ret);
 		break;
 	}
 	case NSREQ_BIND:
 		r = lwip_bind(req->bind.req_s, &req->bind.req_name,
-			      req->bind.req_namelen);
+					  req->bind.req_namelen);
 		break;
 	case NSREQ_SHUTDOWN:
 		r = lwip_shutdown(req->shutdown.req_s, req->shutdown.req_how);
@@ -211,7 +221,7 @@ serve_thread(uint32_t a) {
 		break;
 	case NSREQ_CONNECT:
 		r = lwip_connect(req->connect.req_s, &req->connect.req_name,
-				 req->connect.req_namelen);
+						 req->connect.req_namelen);
 		break;
 	case NSREQ_LISTEN:
 		r = lwip_listen(req->listen.req_s, req->listen.req_backlog);
@@ -220,15 +230,15 @@ serve_thread(uint32_t a) {
 		// Note that we read the request fields before we
 		// overwrite it with the response data.
 		r = lwip_recv(req->recv.req_s, req->recvRet.ret_buf,
-			      req->recv.req_len, req->recv.req_flags);
+					  req->recv.req_len, req->recv.req_flags);
 		break;
 	case NSREQ_SEND:
 		r = lwip_send(req->send.req_s, &req->send.req_buf,
-			      req->send.req_size, req->send.req_flags);
+					  req->send.req_size, req->send.req_flags);
 		break;
 	case NSREQ_SOCKET:
 		r = lwip_socket(req->socket.req_domain, req->socket.req_type,
-				req->socket.req_protocol);
+						req->socket.req_protocol);
 		break;
 	case NSREQ_INPUT:
 		jif_input(&nif, (void *)&req->pkt);
@@ -240,7 +250,8 @@ serve_thread(uint32_t a) {
 		break;
 	}
 
-	if (r == -1) {
+	if (r == -1)
+	{
 		char buf[100];
 		snprintf(buf, sizeof buf, "ns req type %d", args->reqno);
 		perror(buf);
@@ -250,18 +261,19 @@ serve_thread(uint32_t a) {
 		ipc_send(args->whom, r, 0, 0);
 
 	put_buffer(args->req);
-	sys_page_unmap(0, (void*) args->req);
+	sys_page_unmap(0, (void *)args->req);
 	free(args);
 }
 
-void
-serve(void) {
+void serve(void)
+{
 	int32_t reqno;
 	uint32_t whom;
 	int i, perm;
 	void *va;
 
-	while (1) {
+	while (1)
+	{
 		// ipc_recv will block the entire process, so we flush
 		// all pending work from other threads.  We limit the
 		// number of yields in case there's a rogue thread.
@@ -270,20 +282,23 @@ serve(void) {
 
 		perm = 0;
 		va = get_buffer();
-		reqno = ipc_recv((int32_t *) &whom, (void *) va, &perm);
-		if (debug) {
+		reqno = ipc_recv((int32_t *)&whom, (void *)va, &perm);
+		if (debug)
+		{
 			cprintf("ns req %d from %08x\n", reqno, whom);
 		}
 
 		// first take care of requests that do not contain an argument page
-		if (reqno == NSREQ_TIMER) {
+		if (reqno == NSREQ_TIMER)
+		{
 			process_timer(whom);
 			put_buffer(va);
 			continue;
 		}
 
 		// All remaining requests must contain an argument page
-		if (!(perm & PTE_P)) {
+		if (!(perm & PTE_P))
+		{
 			cprintf("Invalid request from %08x: no argument page\n", whom);
 			continue; // just leave it hanging...
 		}
@@ -304,15 +319,15 @@ serve(void) {
 }
 
 static void
-tmain(uint32_t arg) {
+tmain(uint32_t arg)
+{
 	serve_init(inet_addr(IP),
-		   inet_addr(MASK),
-		   inet_addr(DEFAULT));
+			   inet_addr(MASK),
+			   inet_addr(DEFAULT));
 	serve();
 }
 
-void
-umain(int argc, char **argv)
+void umain(int argc, char **argv)
 {
 	envid_t ns_envid = sys_getenvid();
 
@@ -322,7 +337,8 @@ umain(int argc, char **argv)
 	timer_envid = fork();
 	if (timer_envid < 0)
 		panic("error forking");
-	else if (timer_envid == 0) {
+	else if (timer_envid == 0)
+	{
 		timer(ns_envid, TIMER_INTERVAL);
 		return;
 	}
@@ -332,7 +348,8 @@ umain(int argc, char **argv)
 	input_envid = fork();
 	if (input_envid < 0)
 		panic("error forking");
-	else if (input_envid == 0) {
+	else if (input_envid == 0)
+	{
 		input(ns_envid);
 		return;
 	}
@@ -342,7 +359,8 @@ umain(int argc, char **argv)
 	output_envid = fork();
 	if (output_envid < 0)
 		panic("error forking");
-	else if (output_envid == 0) {
+	else if (output_envid == 0)
+	{
 		output(ns_envid);
 		return;
 	}

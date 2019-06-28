@@ -5,7 +5,6 @@
 #include <inc/stdio.h>
 #include <inc/stdarg.h>
 
-
 static void
 putch(int ch, int *cnt)
 {
@@ -13,17 +12,15 @@ putch(int ch, int *cnt)
 	*cnt++;
 }
 
-int
-vcprintf(const char *fmt, va_list ap)
+int vcprintf(const char *fmt, va_list ap)
 {
 	int cnt = 0;
 
-	vprintfmt((void*)putch, &cnt, fmt, ap);
+	vprintfmt((void *)putch, &cnt, fmt, ap);
 	return cnt;
 }
 
-int
-cprintf(const char *fmt, ...)
+int cprintf(const char *fmt, ...)
 {
 	va_list ap;
 	int cnt;
@@ -34,4 +31,3 @@ cprintf(const char *fmt, ...)
 
 	return cnt;
 }
-

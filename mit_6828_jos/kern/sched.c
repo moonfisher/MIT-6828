@@ -8,8 +8,7 @@
 void sched_halt(void);
 
 // Choose a user environment to run and run it.
-void
-sched_yield(void)
+void sched_yield(void)
 {
 	struct Env *idle;
 
@@ -32,16 +31,20 @@ sched_yield(void)
 	// LAB 4: Your code here.
 	int start = 0;
 	int j;
-	if (curenv) {
-		start = ENVX(curenv->env_id) + 1;	//从当前Env结构的后一个开始
+	if (curenv)
+	{
+		start = ENVX(curenv->env_id) + 1; //从当前Env结构的后一个开始
 	}
-	for (int i = 0; i < NENV; i++) {		//遍历所有Env结构
+	for (int i = 0; i < NENV; i++)
+	{ //遍历所有Env结构
 		j = (start + i) % NENV;
-		if (envs[j].env_status == ENV_RUNNABLE) {
+		if (envs[j].env_status == ENV_RUNNABLE)
+		{
 			env_run(&envs[j]);
 		}
 	}
-	if (curenv && curenv->env_status == ENV_RUNNING) {		//这是必须的，假设当前只有一个Env，如果没有这个判断，那么这个CPU将会停机
+	if (curenv && curenv->env_status == ENV_RUNNING)
+	{ //这是必须的，假设当前只有一个Env，如果没有这个判断，那么这个CPU将会停机
 		env_run(curenv);
 	}
 	// sched_halt never returns
@@ -51,20 +54,21 @@ sched_yield(void)
 // Halt this CPU when there is nothing to do. Wait until the
 // timer interrupt wakes it up. This function never returns.
 //
-void
-sched_halt(void)
+void sched_halt(void)
 {
 	int i;
 
 	// For debugging and testing purposes, if there are no runnable
 	// environments in the system, then drop into the kernel monitor.
-	for (i = 0; i < NENV; i++) {
+	for (i = 0; i < NENV; i++)
+	{
 		if ((envs[i].env_status == ENV_RUNNABLE ||
-		     envs[i].env_status == ENV_RUNNING ||
-		     envs[i].env_status == ENV_DYING))
+			 envs[i].env_status == ENV_RUNNING ||
+			 envs[i].env_status == ENV_DYING))
 			break;
 	}
-	if (i == NENV) {
+	if (i == NENV)
+	{
 		cprintf("No runnable environments in the system!\n");
 		while (1)
 			monitor(NULL);
@@ -83,7 +87,7 @@ sched_halt(void)
 	unlock_kernel();
 
 	// Reset stack pointer, enable interrupts and then halt.
-	asm volatile (
+	asm volatile(
 		"movl $0, %%ebp\n"
 		"movl %0, %%esp\n"
 		"pushl $0\n"
@@ -93,6 +97,6 @@ sched_halt(void)
 		"1:\n"
 		"hlt\n"
 		"jmp 1b\n"
-	: : "a" (thiscpu->cpu_ts.ts_esp0));
+		:
+		: "a"(thiscpu->cpu_ts.ts_esp0));
 }
-

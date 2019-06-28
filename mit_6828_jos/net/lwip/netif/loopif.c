@@ -49,8 +49,7 @@
  * @return ERR_OK if the loopif is initialized
  *         ERR_MEM if private data couldn't be allocated
  */
-err_t
-loopif_init(struct netif *netif)
+err_t loopif_init(struct netif *netif)
 {
   /* initialize the snmp variables and counters inside the struct netif
    * ifSpeed: no assumption can be made!

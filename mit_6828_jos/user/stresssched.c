@@ -2,8 +2,7 @@
 
 volatile int counter;
 
-void
-umain(int argc, char **argv)
+void umain(int argc, char **argv)
 {
 	int i, j;
 	int seen;
@@ -13,7 +12,8 @@ umain(int argc, char **argv)
 	for (i = 0; i < 20; i++)
 		if (fork() == 0)
 			break;
-	if (i == 20) {
+	if (i == 20)
+	{
 		sys_yield();
 		return;
 	}
@@ -23,17 +23,16 @@ umain(int argc, char **argv)
 		asm volatile("pause");
 
 	// Check that one environment doesn't run on two CPUs at once
-	for (i = 0; i < 10; i++) {
+	for (i = 0; i < 10; i++)
+	{
 		sys_yield();
 		for (j = 0; j < 10000; j++)
 			counter++;
 	}
 
-	if (counter != 10*10000)
+	if (counter != 10 * 10000)
 		panic("ran on two CPUs at once (counter is %d)", counter);
 
 	// Check that we see environments running on different CPUs
 	cprintf("[%08x] stresssched on CPU %d\n", thisenv->env_id, thisenv->env_cpunum);
-
 }
-

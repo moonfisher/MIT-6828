@@ -8,7 +8,6 @@
 
 #include "fs.h"
 
-
 #define debug 0
 
 // The file system server maintains three structures
@@ -29,48 +28,49 @@
 //    environment IDs in the kernel.  Use openfile_lookup to translate
 //    file IDs to struct OpenFile.
 
-struct OpenFile {
-	uint32_t o_fileid;	// file id
-	struct File *o_file;	// mapped descriptor for open file
-	int o_mode;		// open mode
-	struct Fd *o_fd;	// Fd page
+struct OpenFile
+{
+	uint32_t o_fileid;   // file id
+	struct File *o_file; // mapped descriptor for open file
+	int o_mode;			 // open mode
+	struct Fd *o_fd;	 // Fd page
 };
 
 // Max number of open files in the file system at once
-#define MAXOPEN		1024
-#define FILEVA		0xD0000000
+#define MAXOPEN 1024
+#define FILEVA 0xD0000000
 
 // initialize to force into data section
 struct OpenFile opentab[MAXOPEN] = {
-	{ 0, 0, 1, 0 }
-};
+	{0, 0, 1, 0}};
 
 // Virtual address at which to receive page mappings containing client requests.
 union Fsipc *fsreq = (union Fsipc *)0x0ffff000;
 
-void
-serve_init(void)
+void serve_init(void)
 {
 	int i;
 	uintptr_t va = FILEVA;
-	for (i = 0; i < MAXOPEN; i++) {
+	for (i = 0; i < MAXOPEN; i++)
+	{
 		opentab[i].o_fileid = i;
-		opentab[i].o_fd = (struct Fd*) va;
+		opentab[i].o_fd = (struct Fd *)va;
 		va += PGSIZE;
 	}
 }
 
 // Allocate an open file.
-int
-openfile_alloc(struct OpenFile **o)
+int openfile_alloc(struct OpenFile **o)
 {
 	int i, r;
 
 	// Find an available open-file table entry
-	for (i = 0; i < MAXOPEN; i++) {
-		switch (pageref(opentab[i].o_fd)) {			//如果fd对应的物理页被2个虚拟地址映射了，那么说明该fd结构已经被分配了。
-		case 0:										//2个虚拟地址映射分别出现在fs进程和用户进程的页表中
-			if ((r = sys_page_alloc(0, opentab[i].o_fd, PTE_P|PTE_U|PTE_W)) < 0)
+	for (i = 0; i < MAXOPEN; i++)
+	{
+		switch (pageref(opentab[i].o_fd))
+		{		//如果fd对应的物理页被2个虚拟地址映射了，那么说明该fd结构已经被分配了。
+		case 0: //2个虚拟地址映射分别出现在fs进程和用户进程的页表中
+			if ((r = sys_page_alloc(0, opentab[i].o_fd, PTE_P | PTE_U | PTE_W)) < 0)
 				return r;
 			/* fall through */
 		case 1:
@@ -84,8 +84,7 @@ openfile_alloc(struct OpenFile **o)
 }
 
 // Look up an open file for envid.
-int
-openfile_lookup(envid_t envid, uint32_t fileid, struct OpenFile **po)
+int openfile_lookup(envid_t envid, uint32_t fileid, struct OpenFile **po)
 {
 	struct OpenFile *o;
 
@@ -100,9 +99,8 @@ openfile_lookup(envid_t envid, uint32_t fileid, struct OpenFile **po)
 // Open req->req_path in mode req->req_omode, storing the Fd page and
 // permissions to return to the calling environment in *pg_store and
 // *perm_store respectively.
-int
-serve_open(envid_t envid, struct Fsreq_open *req,
-	   void **pg_store, int *perm_store)
+int serve_open(envid_t envid, struct Fsreq_open *req,
+			   void **pg_store, int *perm_store)
 {
 	char path[MAXPATHLEN];
 	struct File *f;
@@ -115,10 +113,11 @@ serve_open(envid_t envid, struct Fsreq_open *req,
 
 	// Copy in the path, making sure it's null-terminated
 	memmove(path, req->req_path, MAXPATHLEN);
-	path[MAXPATHLEN-1] = 0;
+	path[MAXPATHLEN - 1] = 0;
 
 	// Find an open file ID
-	if ((r = openfile_alloc(&o)) < 0) {					//从opentab数组中分配一个OpenFile结构
+	if ((r = openfile_alloc(&o)) < 0)
+	{ //从opentab数组中分配一个OpenFile结构
 		if (debug)
 			cprintf("openfile_alloc failed: %e", r);
 		return r;
@@ -126,17 +125,22 @@ serve_open(envid_t envid, struct Fsreq_open *req,
 	fileid = r;
 
 	// Open the file
-	if (req->req_omode & O_CREAT) {
-		if ((r = file_create(path, &f)) < 0) {			//根据path分配一个File结构
+	if (req->req_omode & O_CREAT)
+	{
+		if ((r = file_create(path, &f)) < 0)
+		{ //根据path分配一个File结构
 			if (!(req->req_omode & O_EXCL) && r == -E_FILE_EXISTS)
 				goto try_open;
 			if (debug)
 				cprintf("file_create failed: %e", r);
 			return r;
 		}
-	} else {
-try_open:
-		if ((r = file_open(path, &f)) < 0) {
+	}
+	else
+	{
+	try_open:
+		if ((r = file_open(path, &f)) < 0)
+		{
 			if (debug)
 				cprintf("file_open failed: %e", r);
 			return r;
@@ -144,21 +148,24 @@ try_open:
 	}
 
 	// Truncate
-	if (req->req_omode & O_TRUNC) {
-		if ((r = file_set_size(f, 0)) < 0) {
+	if (req->req_omode & O_TRUNC)
+	{
+		if ((r = file_set_size(f, 0)) < 0)
+		{
 			if (debug)
 				cprintf("file_set_size failed: %e", r);
 			return r;
 		}
 	}
-	if ((r = file_open(path, &f)) < 0) {
+	if ((r = file_open(path, &f)) < 0)
+	{
 		if (debug)
 			cprintf("file_open failed: %e", r);
 		return r;
 	}
 
 	// Save the file pointer
-	o->o_file = f;										//保存File结构到OpenFile结构
+	o->o_file = f; //保存File结构到OpenFile结构
 
 	// Fill out the Fd structure
 	o->o_fd->fd_file.id = o->o_fileid;
@@ -167,20 +174,19 @@ try_open:
 	o->o_mode = req->req_omode;
 
 	if (debug)
-		cprintf("sending success, page %08x\n", (uintptr_t) o->o_fd);
+		cprintf("sending success, page %08x\n", (uintptr_t)o->o_fd);
 
 	// Share the FD page with the caller by setting *pg_store,
 	// store its permission in *perm_store
 	*pg_store = o->o_fd;
-	*perm_store = PTE_P|PTE_U|PTE_W|PTE_SHARE;
+	*perm_store = PTE_P | PTE_U | PTE_W | PTE_SHARE;
 
 	return 0;
 }
 
 // Set the size of req->req_fileid to req->req_size bytes, truncating
 // or extending the file as necessary.
-int
-serve_set_size(envid_t envid, struct Fsreq_set_size *req)
+int serve_set_size(envid_t envid, struct Fsreq_set_size *req)
 {
 	struct OpenFile *o;
 	int r;
@@ -205,8 +211,7 @@ serve_set_size(envid_t envid, struct Fsreq_set_size *req)
 // in ipc->read.req_fileid.  Return the bytes read from the file to
 // the caller in ipc->readRet, then update the seek position.  Returns
 // the number of bytes successfully read, or < 0 on error.
-int
-serve_read(envid_t envid, union Fsipc *ipc)
+int serve_read(envid_t envid, union Fsipc *ipc)
 {
 	struct Fsreq_read *req = &ipc->read;
 	struct Fsret_read *ret = &ipc->readRet;
@@ -219,22 +224,20 @@ serve_read(envid_t envid, union Fsipc *ipc)
 	int r;
 	r = openfile_lookup(envid, req->req_fileid, &o);
 	// cprintf("serve_read():req->req_fileid = %d\n", req->req_fileid);
-	if (r < 0)		//通过fileid找到Openfile结构
+	if (r < 0) //通过fileid找到Openfile结构
 		return r;
-	if ((r = file_read(o->o_file, ret->ret_buf, req->req_n, o->o_fd->fd_offset)) < 0)	//调用fs.c中函数进行读操作
+	if ((r = file_read(o->o_file, ret->ret_buf, req->req_n, o->o_fd->fd_offset)) < 0) //调用fs.c中函数进行读操作
 		return r;
 	o->o_fd->fd_offset += r;
-	
+
 	return r;
 }
-
 
 // Write req->req_n bytes from req->req_buf to req_fileid, starting at
 // the current seek position, and update the seek position
 // accordingly.  Extend the file if necessary.  Returns the number of
 // bytes written, or < 0 on error.
-int
-serve_write(envid_t envid, struct Fsreq_write *req)
+int serve_write(envid_t envid, struct Fsreq_write *req)
 {
 	if (debug)
 		cprintf("serve_write %08x %08x %08x\n", envid, req->req_fileid, req->req_n);
@@ -242,13 +245,16 @@ serve_write(envid_t envid, struct Fsreq_write *req)
 	// LAB 5: Your code here.
 	struct OpenFile *o;
 	int r;
-	if ((r = openfile_lookup(envid, req->req_fileid, &o)) < 0) {
+	if ((r = openfile_lookup(envid, req->req_fileid, &o)) < 0)
+	{
 		return r;
 	}
 	int total = 0;
-	while (1) {
+	while (1)
+	{
 		r = file_write(o->o_file, req->req_buf, req->req_n, o->o_fd->fd_offset);
-		if (r < 0) return r;
+		if (r < 0)
+			return r;
 		total += r;
 		o->o_fd->fd_offset += r;
 		if (req->req_n <= total)
@@ -259,8 +265,7 @@ serve_write(envid_t envid, struct Fsreq_write *req)
 
 // Stat ipc->stat.req_fileid.  Return the file's struct Stat to the
 // caller in ipc->statRet.
-int
-serve_stat(envid_t envid, union Fsipc *ipc)
+int serve_stat(envid_t envid, union Fsipc *ipc)
 {
 	struct Fsreq_stat *req = &ipc->stat;
 	struct Fsret_stat *ret = &ipc->statRet;
@@ -280,8 +285,7 @@ serve_stat(envid_t envid, union Fsipc *ipc)
 }
 
 // Flush all data and metadata of req->req_fileid to disk.
-int
-serve_flush(envid_t envid, struct Fsreq_flush *req)
+int serve_flush(envid_t envid, struct Fsreq_flush *req)
 {
 	struct OpenFile *o;
 	int r;
@@ -295,9 +299,7 @@ serve_flush(envid_t envid, struct Fsreq_flush *req)
 	return 0;
 }
 
-
-int
-serve_sync(envid_t envid, union Fsipc *req)
+int serve_sync(envid_t envid, union Fsipc *req)
 {
 	fs_sync();
 	return 0;
@@ -308,51 +310,55 @@ typedef int (*fshandler)(envid_t envid, union Fsipc *req);
 fshandler handlers[] = {
 	// Open is handled specially because it passes pages
 	/* [FSREQ_OPEN] =	(fshandler)serve_open, */
-	[FSREQ_READ] =		serve_read,
-	[FSREQ_STAT] =		serve_stat,
-	[FSREQ_FLUSH] =		(fshandler)serve_flush,
-	[FSREQ_WRITE] =		(fshandler)serve_write,
-	[FSREQ_SET_SIZE] =	(fshandler)serve_set_size,
-	[FSREQ_SYNC] =		serve_sync
-};
+	[FSREQ_READ] = serve_read,
+	[FSREQ_STAT] = serve_stat,
+	[FSREQ_FLUSH] = (fshandler)serve_flush,
+	[FSREQ_WRITE] = (fshandler)serve_write,
+	[FSREQ_SET_SIZE] = (fshandler)serve_set_size,
+	[FSREQ_SYNC] = serve_sync};
 
-void
-serve(void)
+void serve(void)
 {
 	uint32_t req, whom;
 	int perm, r;
 	void *pg;
 
-	while (1) {
+	while (1)
+	{
 		perm = 0;
-		req = ipc_recv((int32_t *) &whom, fsreq, &perm);
+		req = ipc_recv((int32_t *)&whom, fsreq, &perm);
 		if (debug)
 			cprintf("fs req %d from %08x [page %08x: %s]\n",
-				req, whom, uvpt[PGNUM(fsreq)], fsreq);
+					req, whom, uvpt[PGNUM(fsreq)], fsreq);
 
 		// All requests must contain an argument page
-		if (!(perm & PTE_P)) {
+		if (!(perm & PTE_P))
+		{
 			cprintf("Invalid request from %08x: no argument page\n",
-				whom);
+					whom);
 			continue; // just leave it hanging...
 		}
 
 		pg = NULL;
-		if (req == FSREQ_OPEN) {
-			r = serve_open(whom, (struct Fsreq_open*)fsreq, &pg, &perm);
-		} else if (req < ARRAY_SIZE(handlers) && handlers[req]) {
+		if (req == FSREQ_OPEN)
+		{
+			r = serve_open(whom, (struct Fsreq_open *)fsreq, &pg, &perm);
+		}
+		else if (req < ARRAY_SIZE(handlers) && handlers[req])
+		{
 			r = handlers[req](whom, fsreq);
-		} else {
+		}
+		else
+		{
 			cprintf("Invalid request code %d from %08x\n", req, whom);
 			r = -E_INVAL;
 		}
-		ipc_send(whom, r, pg, perm);			//发送给普通进程，pg只有open操作时才不为NULL，这时pg指向被打开的文件的Fd结构
-		sys_page_unmap(0, fsreq);				//对于发起调用的进程fsipc()函数dstava变量也指向该Fd结构
+		ipc_send(whom, r, pg, perm); //发送给普通进程，pg只有open操作时才不为NULL，这时pg指向被打开的文件的Fd结构
+		sys_page_unmap(0, fsreq);	//对于发起调用的进程fsipc()函数dstava变量也指向该Fd结构
 	}
 }
 
-void
-umain(int argc, char **argv)
+void umain(int argc, char **argv)
 {
 	static_assert(sizeof(struct File) == 256);
 	binaryname = "fs";
@@ -366,4 +372,3 @@ umain(int argc, char **argv)
 	fs_init();
 	serve();
 }
-

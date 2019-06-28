@@ -5,8 +5,7 @@
 
 static char *msg = "This is the NEW message of the day!\n\n";
 
-void
-fs_test(void)
+void fs_test(void)
 {
 	struct File *f;
 	int r;
@@ -14,17 +13,17 @@ fs_test(void)
 	uint32_t *bits;
 
 	// back up bitmap
-	if ((r = sys_page_alloc(0, (void*) PGSIZE, PTE_P|PTE_U|PTE_W)) < 0)
+	if ((r = sys_page_alloc(0, (void *)PGSIZE, PTE_P | PTE_U | PTE_W)) < 0)
 		panic("sys_page_alloc: %e", r);
-	bits = (uint32_t*) PGSIZE;
+	bits = (uint32_t *)PGSIZE;
 	memmove(bits, bitmap, PGSIZE);
 	// allocate block
 	if ((r = alloc_block()) < 0)
 		panic("alloc_block: %e", r);
 	// check that block was free
-	assert(bits[r/32] & (1 << (r%32)));
+	assert(bits[r / 32] & (1 << (r % 32)));
 	// and is not free any more
-	assert(!(bitmap[r/32] & (1 << (r%32))));
+	assert(!(bitmap[r / 32] & (1 << (r % 32))));
 	cprintf("alloc_block is good\n");
 
 	if ((r = file_open("/not-found", &f)) < 0 && r != -E_NOT_FOUND)
@@ -41,7 +40,7 @@ fs_test(void)
 		panic("file_get_block returned wrong data");
 	cprintf("file_get_block is good\n");
 
-	*(volatile char*)blk = *(volatile char*)blk;
+	*(volatile char *)blk = *(volatile char *)blk;
 	assert((uvpt[PGNUM(blk)] & PTE_D));
 	file_flush(f);
 	assert(!(uvpt[PGNUM(blk)] & PTE_D));

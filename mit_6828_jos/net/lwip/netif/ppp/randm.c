@@ -41,16 +41,14 @@
 #include "ppp.h"
 #include "pppdebug.h"
 
-
-#if MD5_SUPPORT /* this module depends on MD5 */
-#define RANDPOOLSZ 16   /* Bytes stored in the pool of randomness. */
+#if MD5_SUPPORT       /* this module depends on MD5 */
+#define RANDPOOLSZ 16 /* Bytes stored in the pool of randomness. */
 
 /*****************************/
 /*** LOCAL DATA STRUCTURES ***/
 /*****************************/
-static char randPool[RANDPOOLSZ];   /* Pool of randomness. */
-static long randCount = 0;      /* Pseudo-random incrementer */
-
+static char randPool[RANDPOOLSZ]; /* Pool of randomness. */
+static long randCount = 0;        /* Pseudo-random incrementer */
 
 /***********************************/
 /*** PUBLIC FUNCTION DEFINITIONS ***/
@@ -63,8 +61,7 @@ static long randCount = 0;      /* Pseudo-random incrementer */
  *  real-time clock.  We'll accumulate more randomness as soon
  *  as things start happening.
  */
-void
-avRandomInit()
+void avRandomInit()
 {
   avChurnRand(NULL, 0);
 }
@@ -79,18 +76,21 @@ avRandomInit()
  *
  * Ref: Applied Cryptography 2nd Ed. by Bruce Schneier p. 427
  */
-void
-avChurnRand(char *randData, u32_t randLen)
+void avChurnRand(char *randData, u32_t randLen)
 {
   MD5_CTX md5;
 
   /* ppp_trace(LOG_INFO, "churnRand: %u@%P\n", randLen, randData); */
   MD5Init(&md5);
   MD5Update(&md5, (u_char *)randPool, sizeof(randPool));
-  if (randData) {
+  if (randData)
+  {
     MD5Update(&md5, (u_char *)randData, randLen);
-  } else {
-    struct {
+  }
+  else
+  {
+    struct
+    {
       /* INCLUDE fields for any system sources of randomness */
       char foobar;
     } sysData;
@@ -99,7 +99,7 @@ avChurnRand(char *randData, u32_t randLen)
     MD5Update(&md5, (u_char *)&sysData, sizeof(sysData));
   }
   MD5Final((u_char *)randPool, &md5);
-/*  ppp_trace(LOG_INFO, "churnRand: -> 0\n"); */
+  /*  ppp_trace(LOG_INFO, "churnRand: -> 0\n"); */
 }
 
 /*
@@ -118,14 +118,14 @@ avChurnRand(char *randData, u32_t randLen)
  *  randCount each time?  Probably there is a weakness but I wish that
  *  it was documented.
  */
-void
-avGenRand(char *buf, u32_t bufLen)
+void avGenRand(char *buf, u32_t bufLen)
 {
   MD5_CTX md5;
   u_char tmp[16];
   u32_t n;
 
-  while (bufLen > 0) {
+  while (bufLen > 0)
+  {
     n = LWIP_MIN(bufLen, RANDPOOLSZ);
     MD5Init(&md5);
     MD5Update(&md5, (u_char *)randPool, sizeof(randPool));
@@ -141,8 +141,7 @@ avGenRand(char *buf, u32_t bufLen)
 /*
  * Return a new random number.
  */
-u32_t
-avRandom()
+u32_t avRandom()
 {
   u32_t newRand;
 
@@ -156,9 +155,8 @@ avRandom()
 /*****************************/
 /*** LOCAL DATA STRUCTURES ***/
 /*****************************/
-static int  avRandomized = 0;       /* Set when truely randomized. */
-static u32_t avRandomSeed = 0;      /* Seed used for random number generation. */
-
+static int avRandomized = 0;   /* Set when truely randomized. */
+static u32_t avRandomSeed = 0; /* Seed used for random number generation. */
 
 /***********************************/
 /*** PUBLIC FUNCTION DEFINITIONS ***/
@@ -177,8 +175,7 @@ static u32_t avRandomSeed = 0;      /* Seed used for random number generation. *
  * operational.  Thus we call it again on the first random
  * event.
  */
-void
-avRandomInit()
+void avRandomInit()
 {
 #if 0
   /* Get a pointer into the last 4 bytes of clockBuf. */
@@ -212,16 +209,18 @@ avRandomInit()
  * value but we use the previous value to randomize the other 16
  * bits.
  */
-void
-avRandomize(void)
+void avRandomize(void)
 {
   static u32_t last_jiffies;
 
-  if (!avRandomized) {
+  if (!avRandomized)
+  {
     avRandomized = !0;
     avRandomInit();
     /* The initialization function also updates the seed. */
-  } else {
+  }
+  else
+  {
     /* avRandomSeed += (avRandomSeed << 16) + TM1; */
     avRandomSeed += (sys_jiffies() - last_jiffies); /* XXX */
   }
@@ -237,8 +236,7 @@ avRandomize(void)
  * operator or network events in which case it will be pseudo random
  * seeded by the real time clock.
  */
-u32_t
-avRandom()
+u32_t avRandom()
 {
   return ((((u32_t)rand() << 16) + rand()) + avRandomSeed);
 }

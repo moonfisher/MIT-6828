@@ -3,7 +3,7 @@
  * Network buffer management
  *
  */
- 
+
 /*
  * Copyright (c) 2001-2004 Swedish Institute of Computer Science.
  * All rights reserved. 
@@ -53,17 +53,21 @@
  *         NULL on lack of memory
  */
 struct
-netbuf *netbuf_new(void)
+    netbuf *
+    netbuf_new(void)
 {
   struct netbuf *buf;
 
   buf = memp_malloc(MEMP_NETBUF);
-  if (buf != NULL) {
+  if (buf != NULL)
+  {
     buf->p = NULL;
     buf->ptr = NULL;
     buf->addr = NULL;
     return buf;
-  } else {
+  }
+  else
+  {
     return NULL;
   }
 }
@@ -73,11 +77,12 @@ netbuf *netbuf_new(void)
  *
  * @param buf pointer to a netbuf allocated by netbuf_new()
  */
-void
-netbuf_delete(struct netbuf *buf)
+void netbuf_delete(struct netbuf *buf)
 {
-  if (buf != NULL) {
-    if (buf->p != NULL) {
+  if (buf != NULL)
+  {
+    if (buf->p != NULL)
+    {
       pbuf_free(buf->p);
       buf->p = buf->ptr = NULL;
     }
@@ -99,15 +104,17 @@ netbuf_alloc(struct netbuf *buf, u16_t size)
   LWIP_ERROR("netbuf_alloc: invalid buf", (buf != NULL), return NULL;);
 
   /* Deallocate any previously allocated memory. */
-  if (buf->p != NULL) {
+  if (buf->p != NULL)
+  {
     pbuf_free(buf->p);
   }
   buf->p = pbuf_alloc(PBUF_TRANSPORT, size, PBUF_RAM);
-  if (buf->p == NULL) {
-     return NULL;
+  if (buf->p == NULL)
+  {
+    return NULL;
   }
   LWIP_ASSERT("check that first pbuf can hold size",
-             (buf->p->len >= size));
+              (buf->p->len >= size));
   buf->ptr = buf->p;
   return buf->p->payload;
 }
@@ -117,11 +124,11 @@ netbuf_alloc(struct netbuf *buf, u16_t size)
  *
  * @param buf pointer to the netbuf which contains the packet buffer to free
  */
-void
-netbuf_free(struct netbuf *buf)
+void netbuf_free(struct netbuf *buf)
 {
   LWIP_ERROR("netbuf_free: invalid buf", (buf != NULL), return;);
-  if (buf->p != NULL) {
+  if (buf->p != NULL)
+  {
     pbuf_free(buf->p);
   }
   buf->p = buf->ptr = NULL;
@@ -136,19 +143,20 @@ netbuf_free(struct netbuf *buf)
  * @return ERR_OK if data is referenced
  *         ERR_MEM if data couldn't be referenced due to lack of memory
  */
-err_t
-netbuf_ref(struct netbuf *buf, const void *dataptr, u16_t size)
+err_t netbuf_ref(struct netbuf *buf, const void *dataptr, u16_t size)
 {
   LWIP_ERROR("netbuf_ref: invalid buf", (buf != NULL), return ERR_ARG;);
-  if (buf->p != NULL) {
+  if (buf->p != NULL)
+  {
     pbuf_free(buf->p);
   }
   buf->p = pbuf_alloc(PBUF_TRANSPORT, 0, PBUF_REF);
-  if (buf->p == NULL) {
+  if (buf->p == NULL)
+  {
     buf->ptr = NULL;
     return ERR_MEM;
   }
-  buf->p->payload = (void*)dataptr;
+  buf->p->payload = (void *)dataptr;
   buf->p->len = buf->p->tot_len = size;
   buf->ptr = buf->p;
   return ERR_OK;
@@ -160,8 +168,7 @@ netbuf_ref(struct netbuf *buf, const void *dataptr, u16_t size)
  * @param head the first netbuf
  * @param tail netbuf to chain after head
  */
-void
-netbuf_chain(struct netbuf *head, struct netbuf *tail)
+void netbuf_chain(struct netbuf *head, struct netbuf *tail)
 {
   LWIP_ERROR("netbuf_ref: invalid head", (head != NULL), return;);
   LWIP_ERROR("netbuf_chain: invalid tail", (tail != NULL), return;);
@@ -179,14 +186,14 @@ netbuf_chain(struct netbuf *head, struct netbuf *tail)
  * @return ERR_OK if the information was retreived,
  *         ERR_BUF on error.
  */
-err_t
-netbuf_data(struct netbuf *buf, void **dataptr, u16_t *len)
+err_t netbuf_data(struct netbuf *buf, void **dataptr, u16_t *len)
 {
   LWIP_ERROR("netbuf_data: invalid buf", (buf != NULL), return ERR_ARG;);
   LWIP_ERROR("netbuf_data: invalid dataptr", (dataptr != NULL), return ERR_ARG;);
   LWIP_ERROR("netbuf_data: invalid len", (len != NULL), return ERR_ARG;);
 
-  if (buf->ptr == NULL) {
+  if (buf->ptr == NULL)
+  {
     return ERR_BUF;
   }
   *dataptr = buf->ptr->payload;
@@ -204,15 +211,16 @@ netbuf_data(struct netbuf *buf, void **dataptr, u16_t *len)
  *         1  if moved to the next part but now there is no next part
  *         0  if moved to the next part and there are still more parts
  */
-s8_t
-netbuf_next(struct netbuf *buf)
+s8_t netbuf_next(struct netbuf *buf)
 {
   LWIP_ERROR("netbuf_free: invalid buf", (buf != NULL), return -1;);
-  if (buf->ptr->next == NULL) {
+  if (buf->ptr->next == NULL)
+  {
     return -1;
   }
   buf->ptr = buf->ptr->next;
-  if (buf->ptr->next == NULL) {
+  if (buf->ptr->next == NULL)
+  {
     return 1;
   }
   return 0;
@@ -225,8 +233,7 @@ netbuf_next(struct netbuf *buf)
  *
  * @param buf the netbuf to modify
  */
-void
-netbuf_first(struct netbuf *buf)
+void netbuf_first(struct netbuf *buf)
 {
   LWIP_ERROR("netbuf_free: invalid buf", (buf != NULL), return;);
   buf->ptr = buf->p;

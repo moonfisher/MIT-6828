@@ -1,7 +1,6 @@
 #include <inc/lib.h>
 
-void
-umain(int argc, char **argv)
+void umain(int argc, char **argv)
 {
 	int rfd, wfd;
 	char buf[512];
@@ -16,7 +15,7 @@ umain(int argc, char **argv)
 		panic("open /newmotd and /motd give same file descriptor");
 
 	cprintf("OLD MOTD\n===\n");
-	while ((n = read(wfd, buf, sizeof buf-1)) > 0)
+	while ((n = read(wfd, buf, sizeof buf - 1)) > 0)
 		sys_cputs(buf, n);
 	cprintf("===\n");
 	seek(wfd, 0);
@@ -25,7 +24,8 @@ umain(int argc, char **argv)
 		panic("truncate /motd: %e", r);
 
 	cprintf("NEW MOTD\n===\n");
-	while ((n = read(rfd, buf, sizeof buf-1)) > 0) {
+	while ((n = read(rfd, buf, sizeof buf - 1)) > 0)
+	{
 		sys_cputs(buf, n);
 		if ((r = write(wfd, buf, n)) != n)
 			panic("write /motd: %e", r);

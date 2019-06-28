@@ -1,8 +1,7 @@
 #include <inc/lib.h>
 #include <inc/x86.h>
 
-void
-sleep(int sec)
+void sleep(int sec)
 {
 	unsigned now = sys_time_msec();
 	unsigned end = now + sec * 1000;
@@ -16,8 +15,7 @@ sleep(int sec)
 		sys_yield();
 }
 
-void
-umain(int argc, char **argv)
+void umain(int argc, char **argv)
 {
 	int i;
 
@@ -26,7 +24,8 @@ umain(int argc, char **argv)
 		sys_yield();
 
 	cprintf("starting count down: ");
-	for (i = 5; i >= 0; i--) {
+	for (i = 5; i >= 0; i--)
+	{
 		cprintf("%d ", i);
 		sleep(1);
 	}

@@ -46,8 +46,7 @@
  * @param length
  * @param octets_needed points to the return value
  */
-void
-snmp_asn1_enc_length_cnt(u16_t length, u8_t *octets_needed)
+void snmp_asn1_enc_length_cnt(u16_t length, u8_t *octets_needed)
 {
   if (length < 0x80U)
   {
@@ -73,8 +72,7 @@ snmp_asn1_enc_length_cnt(u16_t length, u8_t *octets_needed)
  * as 0x00,0xFF,0xFF. Note the leading sign octet. A positive value
  * of 0xFFFFFFFF is preceded with 0x00 and the length is 5 octets!!
  */
-void
-snmp_asn1_enc_u32t_cnt(u32_t value, u16_t *octets_needed)
+void snmp_asn1_enc_u32t_cnt(u32_t value, u16_t *octets_needed)
 {
   if (value < 0x80UL)
   {
@@ -106,8 +104,7 @@ snmp_asn1_enc_u32t_cnt(u32_t value, u16_t *octets_needed)
  *
  * @note ASN coded integers are _always_ signed.
  */
-void
-snmp_asn1_enc_s32t_cnt(s32_t value, u16_t *octets_needed)
+void snmp_asn1_enc_s32t_cnt(s32_t value, u16_t *octets_needed)
 {
   if (value < 0)
   {
@@ -138,8 +135,7 @@ snmp_asn1_enc_s32t_cnt(s32_t value, u16_t *octets_needed)
  * @param ident points to object identifier array
  * @param octets_needed points to the return value
  */
-void
-snmp_asn1_enc_oid_cnt(u8_t ident_len, s32_t *ident, u16_t *octets_needed)
+void snmp_asn1_enc_oid_cnt(u8_t ident_len, s32_t *ident, u16_t *octets_needed)
 {
   s32_t sub_id;
   u8_t cnt;
@@ -152,14 +148,14 @@ snmp_asn1_enc_oid_cnt(u8_t ident_len, s32_t *ident, u16_t *octets_needed)
     ident_len -= 2;
     ident += 2;
   }
-  while(ident_len > 0)
+  while (ident_len > 0)
   {
     ident_len--;
     sub_id = *ident;
 
     sub_id >>= 7;
     cnt++;
-    while(sub_id > 0)
+    while (sub_id > 0)
     {
       sub_id >>= 7;
       cnt++;
@@ -177,8 +173,7 @@ snmp_asn1_enc_oid_cnt(u8_t ident_len, s32_t *ident, u16_t *octets_needed)
  * @param type input ASN1 type
  * @return ERR_OK if successfull, ERR_ARG if we can't (or won't) encode
  */
-err_t
-snmp_asn1_enc_type(struct pbuf *p, u16_t ofs, u8_t type)
+err_t snmp_asn1_enc_type(struct pbuf *p, u16_t ofs, u8_t type)
 {
   u16_t plen, base;
   u8_t *msg_ptr;
@@ -209,8 +204,7 @@ snmp_asn1_enc_type(struct pbuf *p, u16_t ofs, u8_t type)
  * @param length is the host order length to be encoded
  * @return ERR_OK if successfull, ERR_ARG if we can't (or won't) encode
  */
-err_t
-snmp_asn1_enc_length(struct pbuf *p, u16_t ofs, u16_t length)
+err_t snmp_asn1_enc_length(struct pbuf *p, u16_t ofs, u16_t length)
 {
   u16_t plen, base;
   u8_t *msg_ptr;
@@ -238,7 +232,10 @@ snmp_asn1_enc_length(struct pbuf *p, u16_t ofs, u16_t length)
         {
           /* next octet in next pbuf */
           p = p->next;
-          if (p == NULL) { return ERR_ARG; }
+          if (p == NULL)
+          {
+            return ERR_ARG;
+          }
           msg_ptr = p->payload;
         }
         else
@@ -264,7 +261,10 @@ snmp_asn1_enc_length(struct pbuf *p, u16_t ofs, u16_t length)
           {
             /* next octet in next pbuf */
             p = p->next;
-            if (p == NULL) { return ERR_ARG; }
+            if (p == NULL)
+            {
+              return ERR_ARG;
+            }
             msg_ptr = p->payload;
             plen += p->len;
           }
@@ -304,8 +304,7 @@ snmp_asn1_enc_length(struct pbuf *p, u16_t ofs, u16_t length)
  *
  * @see snmp_asn1_enc_u32t_cnt()
  */
-err_t
-snmp_asn1_enc_u32t(struct pbuf *p, u16_t ofs, u8_t octets_needed, u32_t value)
+err_t snmp_asn1_enc_u32t(struct pbuf *p, u16_t ofs, u8_t octets_needed, u32_t value)
 {
   u16_t plen, base;
   u8_t *msg_ptr;
@@ -330,7 +329,10 @@ snmp_asn1_enc_u32t(struct pbuf *p, u16_t ofs, u8_t octets_needed, u32_t value)
         {
           /* next octet in next pbuf */
           p = p->next;
-          if (p == NULL) { return ERR_ARG; }
+          if (p == NULL)
+          {
+            return ERR_ARG;
+          }
           msg_ptr = p->payload;
           plen += p->len;
         }
@@ -349,7 +351,10 @@ snmp_asn1_enc_u32t(struct pbuf *p, u16_t ofs, u8_t octets_needed, u32_t value)
         {
           /* next octet in next pbuf */
           p = p->next;
-          if (p == NULL) { return ERR_ARG; }
+          if (p == NULL)
+          {
+            return ERR_ARG;
+          }
           msg_ptr = p->payload;
           plen += p->len;
         }
@@ -380,8 +385,7 @@ snmp_asn1_enc_u32t(struct pbuf *p, u16_t ofs, u8_t octets_needed, u32_t value)
  *
  * @see snmp_asn1_enc_s32t_cnt()
  */
-err_t
-snmp_asn1_enc_s32t(struct pbuf *p, u16_t ofs, u8_t octets_needed, s32_t value)
+err_t snmp_asn1_enc_s32t(struct pbuf *p, u16_t ofs, u8_t octets_needed, s32_t value)
 {
   u16_t plen, base;
   u8_t *msg_ptr;
@@ -405,7 +409,10 @@ snmp_asn1_enc_s32t(struct pbuf *p, u16_t ofs, u8_t octets_needed, s32_t value)
         {
           /* next octet in next pbuf */
           p = p->next;
-          if (p == NULL) { return ERR_ARG; }
+          if (p == NULL)
+          {
+            return ERR_ARG;
+          }
           msg_ptr = p->payload;
           plen += p->len;
         }
@@ -434,8 +441,7 @@ snmp_asn1_enc_s32t(struct pbuf *p, u16_t ofs, u8_t octets_needed, s32_t value)
  * @param ident points to object identifier array
  * @return ERR_OK if successfull, ERR_ARG if we can't (or won't) encode
  */
-err_t
-snmp_asn1_enc_oid(struct pbuf *p, u16_t ofs, u8_t ident_len, s32_t *ident)
+err_t snmp_asn1_enc_oid(struct pbuf *p, u16_t ofs, u8_t ident_len, s32_t *ident)
 {
   u16_t plen, base;
   u8_t *msg_ptr;
@@ -467,7 +473,10 @@ snmp_asn1_enc_oid(struct pbuf *p, u16_t ofs, u8_t ident_len, s32_t *ident)
         {
           /* next octet in next pbuf */
           p = p->next;
-          if (p == NULL) { return ERR_ARG; }
+          if (p == NULL)
+          {
+            return ERR_ARG;
+          }
           msg_ptr = p->payload;
           plen += p->len;
         }
@@ -481,7 +490,7 @@ snmp_asn1_enc_oid(struct pbuf *p, u16_t ofs, u8_t ident_len, s32_t *ident)
       }
       else
       {
-/* @bug:  allow empty varbinds for symmetry (we must decode them for getnext), allow partial compression??  */
+        /* @bug:  allow empty varbinds for symmetry (we must decode them for getnext), allow partial compression??  */
         /* ident_len <= 1, at least we need zeroDotZero (0.0) (ident_len == 2) */
         return ERR_ARG;
       }
@@ -494,7 +503,7 @@ snmp_asn1_enc_oid(struct pbuf *p, u16_t ofs, u8_t ident_len, s32_t *ident)
         sub_id = *ident;
         tail = 0;
         shift = 28;
-        while(shift > 0)
+        while (shift > 0)
         {
           u8_t code;
 
@@ -508,7 +517,10 @@ snmp_asn1_enc_oid(struct pbuf *p, u16_t ofs, u8_t ident_len, s32_t *ident)
             {
               /* next octet in next pbuf */
               p = p->next;
-              if (p == NULL) { return ERR_ARG; }
+              if (p == NULL)
+              {
+                return ERR_ARG;
+              }
               msg_ptr = p->payload;
               plen += p->len;
             }
@@ -528,7 +540,10 @@ snmp_asn1_enc_oid(struct pbuf *p, u16_t ofs, u8_t ident_len, s32_t *ident)
           {
             /* next octet in next pbuf */
             p = p->next;
-            if (p == NULL) { return ERR_ARG; }
+            if (p == NULL)
+            {
+              return ERR_ARG;
+            }
             msg_ptr = p->payload;
             plen += p->len;
           }
@@ -558,8 +573,7 @@ snmp_asn1_enc_oid(struct pbuf *p, u16_t ofs, u8_t ident_len, s32_t *ident)
  * @param raw points raw data
  * @return ERR_OK if successfull, ERR_ARG if we can't (or won't) encode
  */
-err_t
-snmp_asn1_enc_raw(struct pbuf *p, u16_t ofs, u8_t raw_len, u8_t *raw)
+err_t snmp_asn1_enc_raw(struct pbuf *p, u16_t ofs, u8_t raw_len, u8_t *raw)
 {
   u16_t plen, base;
   u8_t *msg_ptr;
@@ -585,7 +599,10 @@ snmp_asn1_enc_raw(struct pbuf *p, u16_t ofs, u8_t raw_len, u8_t *raw)
         {
           /* next octet in next pbuf */
           p = p->next;
-          if (p == NULL) { return ERR_ARG; }
+          if (p == NULL)
+          {
+            return ERR_ARG;
+          }
           msg_ptr = p->payload;
           plen += p->len;
         }

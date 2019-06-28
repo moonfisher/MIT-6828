@@ -79,11 +79,11 @@
 /* Pseudo random macro based on netif informations.
  * You could use "rand()" from the C Library if you define LWIP_AUTOIP_RAND in lwipopts.h */
 #ifndef LWIP_AUTOIP_RAND
-#define LWIP_AUTOIP_RAND(netif) ( (((u32_t)((netif->hwaddr[5]) & 0xff) << 24) | \
-                                   ((u32_t)((netif->hwaddr[3]) & 0xff) << 16) | \
-                                   ((u32_t)((netif->hwaddr[2]) & 0xff) << 8) | \
-                                   ((u32_t)((netif->hwaddr[4]) & 0xff))) + \
-                                   (netif->autoip?netif->autoip->tried_llipaddr:0))
+#define LWIP_AUTOIP_RAND(netif) ((((u32_t)((netif->hwaddr[5]) & 0xff) << 24) | \
+                                  ((u32_t)((netif->hwaddr[3]) & 0xff) << 16) | \
+                                  ((u32_t)((netif->hwaddr[2]) & 0xff) << 8) |  \
+                                  ((u32_t)((netif->hwaddr[4]) & 0xff))) +      \
+                                 (netif->autoip ? netif->autoip->tried_llipaddr : 0))
 #endif /* LWIP_AUTOIP_RAND */
 
 /* static functions */
@@ -101,8 +101,7 @@ static err_t autoip_bind(struct netif *netif);
 /**
  * Initialize this module
  */
-void
-autoip_init(void)
+void autoip_init(void)
 {
   LWIP_DEBUGF(AUTOIP_DEBUG | LWIP_DBG_TRACE | 3, ("autoip_init()\n"));
 }
@@ -116,25 +115,31 @@ autoip_handle_arp_conflict(struct netif *netif)
   /* Somehow detect if we are defending or retreating */
   unsigned char defend = 1; /* tbd */
 
-  if(defend) {
-    if(netif->autoip->lastconflict > 0) {
+  if (defend)
+  {
+    if (netif->autoip->lastconflict > 0)
+    {
       /* retreat, there was a conflicting ARP in the last
        * DEFEND_INTERVAL seconds
        */
       LWIP_DEBUGF(AUTOIP_DEBUG | LWIP_DBG_TRACE | LWIP_DBG_STATE | 1,
-        ("autoip_handle_arp_conflict(): we are defending, but in DEFEND_INTERVAL, retreating\n"));
+                  ("autoip_handle_arp_conflict(): we are defending, but in DEFEND_INTERVAL, retreating\n"));
 
       /* TODO: close all TCP sessions */
       autoip_start(netif);
-    } else {
+    }
+    else
+    {
       LWIP_DEBUGF(AUTOIP_DEBUG | LWIP_DBG_TRACE | LWIP_DBG_STATE | 1,
-        ("autoip_handle_arp_conflict(): we are defend, send ARP Announce\n"));
+                  ("autoip_handle_arp_conflict(): we are defend, send ARP Announce\n"));
       autoip_arp_announce(netif);
       netif->autoip->lastconflict = DEFEND_INTERVAL * AUTOIP_TICKS_PER_SECOND;
     }
-  } else {
+  }
+  else
+  {
     LWIP_DEBUGF(AUTOIP_DEBUG | LWIP_DBG_TRACE | LWIP_DBG_STATE | 1,
-      ("autoip_handle_arp_conflict(): we do not defend, retreating\n"));
+                ("autoip_handle_arp_conflict(): we do not defend, retreating\n"));
     /* TODO: close all TCP sessions */
     autoip_start(netif);
   }
@@ -153,21 +158,22 @@ autoip_create_rand_addr(struct netif *netif, struct ip_addr *RandomIPAddr)
    * compliant to RFC 3927 Section 2.1
    * We have 254 * 256 possibilities
    */
-  
-  RandomIPAddr->addr = (0xA9FE0100 + ((u32_t)(((u8_t)(netif->hwaddr[4])) |
-    ((u32_t)((u8_t)(netif->hwaddr[5]))) << 8)) + netif->autoip->tried_llipaddr);
 
-  if (RandomIPAddr->addr>0xA9FEFEFF) {
-    RandomIPAddr->addr = (0xA9FE0100 + (RandomIPAddr->addr-0xA9FEFEFF));
+  RandomIPAddr->addr = (0xA9FE0100 + ((u32_t)(((u8_t)(netif->hwaddr[4])) | ((u32_t)((u8_t)(netif->hwaddr[5]))) << 8)) + netif->autoip->tried_llipaddr);
+
+  if (RandomIPAddr->addr > 0xA9FEFEFF)
+  {
+    RandomIPAddr->addr = (0xA9FE0100 + (RandomIPAddr->addr - 0xA9FEFEFF));
   }
-  if (RandomIPAddr->addr<0xA9FE0100) {
-    RandomIPAddr->addr = (0xA9FEFEFF - (0xA9FE0100-RandomIPAddr->addr));
+  if (RandomIPAddr->addr < 0xA9FE0100)
+  {
+    RandomIPAddr->addr = (0xA9FEFEFF - (0xA9FE0100 - RandomIPAddr->addr));
   }
   RandomIPAddr->addr = htonl(RandomIPAddr->addr);
-  
+
   LWIP_DEBUGF(AUTOIP_DEBUG | LWIP_DBG_TRACE | LWIP_DBG_STATE | 1,
-    ("autoip_create_rand_addr(): tried_llipaddr=%"U16_F", 0x%08"X32_F"\n",
-    (u16_t)(netif->autoip->tried_llipaddr), (u32_t)(RandomIPAddr->addr)));
+              ("autoip_create_rand_addr(): tried_llipaddr=%" U16_F ", 0x%08" X32_F "\n",
+               (u16_t)(netif->autoip->tried_llipaddr), (u32_t)(RandomIPAddr->addr)));
 }
 
 /**
@@ -179,8 +185,8 @@ static err_t
 autoip_arp_announce(struct netif *netif)
 {
   return etharp_raw(netif, (struct eth_addr *)netif->hwaddr, &ethbroadcast,
-    (struct eth_addr *)netif->hwaddr, &netif->autoip->llipaddr, &ethzero,
-    &netif->autoip->llipaddr, ARP_REQUEST);
+                    (struct eth_addr *)netif->hwaddr, &netif->autoip->llipaddr, &ethzero,
+                    &netif->autoip->llipaddr, ARP_REQUEST);
 }
 
 /**
@@ -195,15 +201,15 @@ autoip_bind(struct netif *netif)
   struct ip_addr sn_mask, gw_addr;
 
   LWIP_DEBUGF(AUTOIP_DEBUG | LWIP_DBG_TRACE | 3,
-    ("autoip_bind(netif=%p) %c%c%"U16_F" 0x%08"X32_F"\n",
-    (void*)netif, netif->name[0], netif->name[1], (u16_t)netif->num, autoip->llipaddr.addr));
+              ("autoip_bind(netif=%p) %c%c%" U16_F " 0x%08" X32_F "\n",
+               (void *)netif, netif->name[0], netif->name[1], (u16_t)netif->num, autoip->llipaddr.addr));
 
   IP4_ADDR(&sn_mask, 255, 255, 0, 0);
   IP4_ADDR(&gw_addr, 0, 0, 0, 0);
 
   netif_set_ipaddr(netif, &autoip->llipaddr);
   netif_set_netmask(netif, &sn_mask);
-  netif_set_gw(netif, &gw_addr);  
+  netif_set_gw(netif, &gw_addr);
 
   /* bring the interface up */
   netif_set_up(netif);
@@ -216,13 +222,13 @@ autoip_bind(struct netif *netif)
  *
  * @param netif network interface on which start the AutoIP client
  */
-err_t
-autoip_start(struct netif *netif)
+err_t autoip_start(struct netif *netif)
 {
   struct autoip *autoip = netif->autoip;
   err_t result = ERR_OK;
 
-  if(netif_is_up(netif)) {
+  if (netif_is_up(netif))
+  {
     netif_set_down(netif);
   }
 
@@ -231,26 +237,30 @@ autoip_start(struct netif *netif)
    */
   netif->ip_addr.addr = 0;
   netif->netmask.addr = 0;
-  netif->gw.addr      = 0;
+  netif->gw.addr = 0;
 
   LWIP_DEBUGF(AUTOIP_DEBUG | LWIP_DBG_TRACE | LWIP_DBG_STATE,
-    ("autoip_start(netif=%p) %c%c%"U16_F"\n", (void*)netif, netif->name[0],
-    netif->name[1], (u16_t)netif->num));
-  if(autoip == NULL) {
+              ("autoip_start(netif=%p) %c%c%" U16_F "\n", (void *)netif, netif->name[0],
+               netif->name[1], (u16_t)netif->num));
+  if (autoip == NULL)
+  {
     /* no AutoIP client attached yet? */
     LWIP_DEBUGF(AUTOIP_DEBUG | LWIP_DBG_TRACE,
-      ("autoip_start(): starting new AUTOIP client\n"));
+                ("autoip_start(): starting new AUTOIP client\n"));
     autoip = mem_malloc(sizeof(struct autoip));
-    if(autoip == NULL) {
+    if (autoip == NULL)
+    {
       LWIP_DEBUGF(AUTOIP_DEBUG | LWIP_DBG_TRACE,
-        ("autoip_start(): could not allocate autoip\n"));
+                  ("autoip_start(): could not allocate autoip\n"));
       return ERR_MEM;
     }
-    memset( autoip, 0, sizeof(struct autoip));
+    memset(autoip, 0, sizeof(struct autoip));
     /* store this AutoIP client in the netif */
     netif->autoip = autoip;
     LWIP_DEBUGF(AUTOIP_DEBUG | LWIP_DBG_TRACE, ("autoip_start(): allocated autoip"));
-  } else {
+  }
+  else
+  {
     autoip->state = AUTOIP_STATE_OFF;
     autoip->ttw = 0;
     autoip->sent_num = 0;
@@ -275,7 +285,8 @@ autoip_start(struct netif *netif)
    * compliant to RFC 3927 Section 2.2.1
    */
 
-  if(autoip->tried_llipaddr > MAX_CONFLICTS) {
+  if (autoip->tried_llipaddr > MAX_CONFLICTS)
+  {
     autoip->ttw = RATE_LIMIT_INTERVAL * AUTOIP_TICKS_PER_SECOND;
   }
 
@@ -287,8 +298,7 @@ autoip_start(struct netif *netif)
  *
  * @param netif network interface on which stop the AutoIP client
  */
-err_t
-autoip_stop(struct netif *netif)
+err_t autoip_stop(struct netif *netif)
 {
   netif->autoip->state = AUTOIP_STATE_OFF;
   netif_set_down(netif);
@@ -298,68 +308,84 @@ autoip_stop(struct netif *netif)
 /**
  * Has to be called in loop every AUTOIP_TMR_INTERVAL milliseconds
  */
-void
-autoip_tmr()
+void autoip_tmr()
 {
   struct netif *netif = netif_list;
   /* loop through netif's */
-  while (netif != NULL) {
+  while (netif != NULL)
+  {
     /* only act on AutoIP configured interfaces */
-    if (netif->autoip != NULL) {
-      if(netif->autoip->lastconflict > 0) {
+    if (netif->autoip != NULL)
+    {
+      if (netif->autoip->lastconflict > 0)
+      {
         netif->autoip->lastconflict--;
       }
 
       LWIP_DEBUGF(AUTOIP_DEBUG | LWIP_DBG_TRACE,
-        ("autoip_tmr() AutoIP-State: %"U16_F", ttw=%"U16_F"\n",
-        (u16_t)(netif->autoip->state), netif->autoip->ttw));
+                  ("autoip_tmr() AutoIP-State: %" U16_F ", ttw=%" U16_F "\n",
+                   (u16_t)(netif->autoip->state), netif->autoip->ttw));
 
-      switch(netif->autoip->state) {
-        case AUTOIP_STATE_PROBING:
-          if(netif->autoip->ttw > 0) {
-            netif->autoip->ttw--;
-          } else {
-            if(netif->autoip->sent_num == PROBE_NUM) {
-              netif->autoip->state = AUTOIP_STATE_ANNOUNCING;
-              netif->autoip->sent_num = 0;
-              netif->autoip->ttw = ANNOUNCE_WAIT * AUTOIP_TICKS_PER_SECOND;
-            } else {
-              etharp_request(netif, &(netif->autoip->llipaddr));
-              LWIP_DEBUGF(AUTOIP_DEBUG | LWIP_DBG_TRACE | 3,
-                ("autoip_tmr() PROBING Sent Probe\n"));
-              netif->autoip->sent_num++;
-              /* calculate time to wait to next probe */
-              netif->autoip->ttw = (u16_t)((LWIP_AUTOIP_RAND(netif) %
-                ((PROBE_MAX - PROBE_MIN) * AUTOIP_TICKS_PER_SECOND) ) +
-                PROBE_MIN * AUTOIP_TICKS_PER_SECOND);
-            }
+      switch (netif->autoip->state)
+      {
+      case AUTOIP_STATE_PROBING:
+        if (netif->autoip->ttw > 0)
+        {
+          netif->autoip->ttw--;
+        }
+        else
+        {
+          if (netif->autoip->sent_num == PROBE_NUM)
+          {
+            netif->autoip->state = AUTOIP_STATE_ANNOUNCING;
+            netif->autoip->sent_num = 0;
+            netif->autoip->ttw = ANNOUNCE_WAIT * AUTOIP_TICKS_PER_SECOND;
           }
-          break;
+          else
+          {
+            etharp_request(netif, &(netif->autoip->llipaddr));
+            LWIP_DEBUGF(AUTOIP_DEBUG | LWIP_DBG_TRACE | 3,
+                        ("autoip_tmr() PROBING Sent Probe\n"));
+            netif->autoip->sent_num++;
+            /* calculate time to wait to next probe */
+            netif->autoip->ttw = (u16_t)((LWIP_AUTOIP_RAND(netif) %
+                                          ((PROBE_MAX - PROBE_MIN) * AUTOIP_TICKS_PER_SECOND)) +
+                                         PROBE_MIN * AUTOIP_TICKS_PER_SECOND);
+          }
+        }
+        break;
 
-        case AUTOIP_STATE_ANNOUNCING:
-          if(netif->autoip->ttw > 0) {
-            netif->autoip->ttw--;
-          } else {
-            if(netif->autoip->sent_num == 0) {
-             /* We are here the first time, so we waited ANNOUNCE_WAIT seconds
+      case AUTOIP_STATE_ANNOUNCING:
+        if (netif->autoip->ttw > 0)
+        {
+          netif->autoip->ttw--;
+        }
+        else
+        {
+          if (netif->autoip->sent_num == 0)
+          {
+            /* We are here the first time, so we waited ANNOUNCE_WAIT seconds
               * Now we can bind to an IP address and use it
               */
-              autoip_bind(netif);
-            }
-
-            if(netif->autoip->sent_num == ANNOUNCE_NUM) {
-              netif->autoip->state = AUTOIP_STATE_BOUND;
-              netif->autoip->sent_num = 0;
-              netif->autoip->ttw = 0;
-            } else {
-              autoip_arp_announce(netif);
-              LWIP_DEBUGF(AUTOIP_DEBUG | LWIP_DBG_TRACE | 3,
-                ("autoip_tmr() ANNOUNCING Sent Announce\n"));
-              netif->autoip->sent_num++;
-              netif->autoip->ttw = ANNOUNCE_INTERVAL * AUTOIP_TICKS_PER_SECOND;
-            }
+            autoip_bind(netif);
           }
-          break;
+
+          if (netif->autoip->sent_num == ANNOUNCE_NUM)
+          {
+            netif->autoip->state = AUTOIP_STATE_BOUND;
+            netif->autoip->sent_num = 0;
+            netif->autoip->ttw = 0;
+          }
+          else
+          {
+            autoip_arp_announce(netif);
+            LWIP_DEBUGF(AUTOIP_DEBUG | LWIP_DBG_TRACE | 3,
+                        ("autoip_tmr() ANNOUNCING Sent Announce\n"));
+            netif->autoip->sent_num++;
+            netif->autoip->ttw = ANNOUNCE_INTERVAL * AUTOIP_TICKS_PER_SECOND;
+          }
+        }
+        break;
       }
     }
     /* proceed to next network interface */
@@ -373,12 +399,12 @@ autoip_tmr()
  * @param netif network interface to use for autoip processing
  * @param hdr Incoming ARP packet
  */
-void
-autoip_arp_reply(struct netif *netif, struct etharp_hdr *hdr)
+void autoip_arp_reply(struct netif *netif, struct etharp_hdr *hdr)
 {
   LWIP_DEBUGF(AUTOIP_DEBUG | LWIP_DBG_TRACE | 3, ("autoip_arp_reply()\n"));
-  if ((netif->autoip != NULL) && (netif->autoip->state != AUTOIP_STATE_OFF)) {
-   /* when ip.src == llipaddr && hw.src != netif->hwaddr
+  if ((netif->autoip != NULL) && (netif->autoip->state != AUTOIP_STATE_OFF))
+  {
+    /* when ip.src == llipaddr && hw.src != netif->hwaddr
     *
     * when probing  ip.dst == llipaddr && hw.src != netif->hwaddr
     * we have a conflict and must solve it
@@ -397,11 +423,12 @@ autoip_arp_reply(struct netif *netif, struct etharp_hdr *hdr)
      */
     SMEMCPY(&sipaddr, &hdr->sipaddr, sizeof(sipaddr));
     SMEMCPY(&dipaddr, &hdr->dipaddr, sizeof(dipaddr));
-      
+
     if ((netif->autoip->state == AUTOIP_STATE_PROBING) ||
         ((netif->autoip->state == AUTOIP_STATE_ANNOUNCING) &&
-         (netif->autoip->sent_num == 0))) {
-     /* RFC 3927 Section 2.2.1:
+         (netif->autoip->sent_num == 0)))
+    {
+      /* RFC 3927 Section 2.2.1:
       * from beginning to after ANNOUNCE_WAIT
       * seconds we have a conflict if
       * ip.src == llipaddr OR
@@ -409,20 +436,24 @@ autoip_arp_reply(struct netif *netif, struct etharp_hdr *hdr)
       */
       if ((ip_addr_cmp(&sipaddr, &netif->autoip->llipaddr)) ||
           (ip_addr_cmp(&dipaddr, &netif->autoip->llipaddr) &&
-           !eth_addr_cmp(&netifaddr, &hdr->shwaddr))) {
+           !eth_addr_cmp(&netifaddr, &hdr->shwaddr)))
+      {
         LWIP_DEBUGF(AUTOIP_DEBUG | LWIP_DBG_TRACE | LWIP_DBG_STATE | 1,
-          ("autoip_arp_reply(): Probe Conflict detected\n"));
+                    ("autoip_arp_reply(): Probe Conflict detected\n"));
         autoip_start(netif);
       }
-    } else {
-     /* RFC 3927 Section 2.5:
+    }
+    else
+    {
+      /* RFC 3927 Section 2.5:
       * in any state we have a conflict if
       * ip.src == llipaddr && hw.src != own hwaddr
       */
       if (ip_addr_cmp(&sipaddr, &netif->autoip->llipaddr) &&
-          !eth_addr_cmp(&netifaddr, &hdr->shwaddr)) {
+          !eth_addr_cmp(&netifaddr, &hdr->shwaddr))
+      {
         LWIP_DEBUGF(AUTOIP_DEBUG | LWIP_DBG_TRACE | LWIP_DBG_STATE | 1,
-          ("autoip_arp_reply(): Conflicting ARP-Packet detected\n"));
+                    ("autoip_arp_reply(): Conflicting ARP-Packet detected\n"));
         autoip_handle_arp_conflict(netif);
       }
     }

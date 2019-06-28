@@ -13,7 +13,7 @@ union Fsipc fsipcbuf __attribute__((aligned(PGSIZE)));
 // dstva: virtual address at which to receive reply page, 0 if none.
 // Returns result from the file server.
 static int
-fsipc(unsigned type, void *dstva)		//type, fsipcbuf是发送给fs进程的数据。dstava和fsipc()的返回值是从fs进程接收的值
+fsipc(unsigned type, void *dstva) //type, fsipcbuf是发送给fs进程的数据。dstava和fsipc()的返回值是从fs进程接收的值
 {
 	static envid_t fsenv;
 	if (fsenv == 0)
@@ -35,15 +35,14 @@ static int devfile_stat(struct Fd *fd, struct Stat *stat);
 static int devfile_trunc(struct Fd *fd, off_t newsize);
 
 struct Dev devfile =
-{
-	.dev_id =	'f',
-	.dev_name =	"file",
-	.dev_read =	devfile_read,
-	.dev_close =	devfile_flush,
-	.dev_stat =	devfile_stat,
-	.dev_write =	devfile_write,
-	.dev_trunc =	devfile_trunc
-};
+	{
+		.dev_id = 'f',
+		.dev_name = "file",
+		.dev_read = devfile_read,
+		.dev_close = devfile_flush,
+		.dev_stat = devfile_stat,
+		.dev_write = devfile_write,
+		.dev_trunc = devfile_trunc};
 
 // Open a file (or directory).
 //
@@ -51,8 +50,7 @@ struct Dev devfile =
 // 	The file descriptor index on success
 // 	-E_BAD_PATH if the path is too long (>= MAXPATHLEN)
 // 	< 0 for other errors.
-int
-open(const char *path, int mode)
+int open(const char *path, int mode)
 {
 	// Find an unused file descriptor page using fd_alloc.
 	// Then send a file-open request to the file server.
@@ -80,7 +78,8 @@ open(const char *path, int mode)
 	strcpy(fsipcbuf.open.req_path, path);
 	fsipcbuf.open.req_omode = mode;
 
-	if ((r = fsipc(FSREQ_OPEN, fd)) < 0) {
+	if ((r = fsipc(FSREQ_OPEN, fd)) < 0)
+	{
 		fd_close(fd, 0);
 		return r;
 	}
@@ -127,7 +126,6 @@ devfile_read(struct Fd *fd, void *buf, size_t n)
 	return r;
 }
 
-
 // Write at most 'n' bytes from 'buf' to 'fd' at the current seek position.
 //
 // Returns:
@@ -171,14 +169,11 @@ devfile_trunc(struct Fd *fd, off_t newsize)
 	return fsipc(FSREQ_SET_SIZE, NULL);
 }
 
-
 // Synchronize disk with buffer cache
-int
-sync(void)
+int sync(void)
 {
 	// Ask the file server to update the disk
 	// by writing any dirty blocks in the buffer cache.
 
 	return fsipc(FSREQ_SYNC, NULL);
 }
-

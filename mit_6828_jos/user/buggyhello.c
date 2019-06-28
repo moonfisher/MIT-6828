@@ -3,9 +3,7 @@
 
 #include <inc/lib.h>
 
-void
-umain(int argc, char **argv)
+void umain(int argc, char **argv)
 {
-	sys_cputs((char*)1, 1);
+	sys_cputs((char *)1, 1);
 }
-

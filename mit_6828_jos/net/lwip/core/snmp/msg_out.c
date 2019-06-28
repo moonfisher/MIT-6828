@@ -77,8 +77,7 @@ static u16_t snmp_varbind_list_enc(struct snmp_varbind_root *root, struct pbuf *
  * @param dst_idx index in 0 .. SNMP_TRAP_DESTINATIONS-1
  * @param enable switch if 0 destination is disabled >0 enabled.
  */
-void
-snmp_trap_dst_enable(u8_t dst_idx, u8_t enable)
+void snmp_trap_dst_enable(u8_t dst_idx, u8_t enable)
 {
   if (dst_idx < SNMP_TRAP_DESTINATIONS)
   {
@@ -91,8 +90,7 @@ snmp_trap_dst_enable(u8_t dst_idx, u8_t enable)
  * @param dst_idx index in 0 .. SNMP_TRAP_DESTINATIONS-1
  * @param dst IPv4 address in host order.
  */
-void
-snmp_trap_dst_ip_set(u8_t dst_idx, struct ip_addr *dst)
+void snmp_trap_dst_ip_set(u8_t dst_idx, struct ip_addr *dst)
 {
   if (dst_idx < SNMP_TRAP_DESTINATIONS)
   {
@@ -109,8 +107,7 @@ snmp_trap_dst_ip_set(u8_t dst_idx, struct ip_addr *dst)
  * @note the caller is responsible for filling in outvb in the m_stat
  * and provide error-status and index (except for tooBig errors) ...
  */
-err_t
-snmp_send_response(struct snmp_msg_pstat *m_stat)
+err_t snmp_send_response(struct snmp_msg_pstat *m_stat)
 {
   struct snmp_varbind_root emptyvb = {NULL, NULL, 0, 0, 0};
   struct pbuf *p;
@@ -156,18 +153,18 @@ snmp_send_response(struct snmp_msg_pstat *m_stat)
 
     switch (m_stat->error_status)
     {
-      case SNMP_ES_TOOBIG:
-        snmp_inc_snmpouttoobigs();
-        break;
-      case SNMP_ES_NOSUCHNAME:
-        snmp_inc_snmpoutnosuchnames();
-        break;
-      case SNMP_ES_BADVALUE:
-        snmp_inc_snmpoutbadvalues();
-        break;
-      case SNMP_ES_GENERROR:
-        snmp_inc_snmpoutgenerrs();
-        break;
+    case SNMP_ES_TOOBIG:
+      snmp_inc_snmpouttoobigs();
+      break;
+    case SNMP_ES_NOSUCHNAME:
+      snmp_inc_snmpoutnosuchnames();
+      break;
+    case SNMP_ES_BADVALUE:
+      snmp_inc_snmpoutbadvalues();
+      break;
+    case SNMP_ES_GENERROR:
+      snmp_inc_snmpoutgenerrs();
+      break;
     }
     snmp_inc_snmpoutgetresponses();
     snmp_inc_snmpoutpkts();
@@ -200,7 +197,6 @@ snmp_send_response(struct snmp_msg_pstat *m_stat)
   }
 }
 
-
 /**
  * Sends an generic or enterprise specific trap message.
  *
@@ -216,16 +212,15 @@ snmp_send_response(struct snmp_msg_pstat *m_stat)
  * and .iso.org.dod.internet.private.enterprises.yourenterprise
  * (sysObjectID) for specific traps.
  */
-err_t
-snmp_send_trap(s8_t generic_trap, struct snmp_obj_id *eoid, s32_t specific_trap)
+err_t snmp_send_trap(s8_t generic_trap, struct snmp_obj_id *eoid, s32_t specific_trap)
 {
   struct snmp_trap_dst *td;
   struct netif *dst_if;
   struct ip_addr dst_ip;
   struct pbuf *p;
-  u16_t i,tot_len;
+  u16_t i, tot_len;
 
-  for (i=0, td = &trap_dst[0]; i<SNMP_TRAP_DESTINATIONS; i++, td++)
+  for (i = 0, td = &trap_dst[0]; i < SNMP_TRAP_DESTINATIONS; i++, td++)
   {
     if ((td->enable != 0) && (td->dip.addr != 0))
     {
@@ -286,8 +281,7 @@ snmp_send_trap(s8_t generic_trap, struct snmp_obj_id *eoid, s32_t specific_trap)
   return ERR_OK;
 }
 
-void
-snmp_coldstart_trap(void)
+void snmp_coldstart_trap(void)
 {
   trap_msg.outvb.head = NULL;
   trap_msg.outvb.tail = NULL;
@@ -295,8 +289,7 @@ snmp_coldstart_trap(void)
   snmp_send_trap(SNMP_GENTRAP_COLDSTART, NULL, 0);
 }
 
-void
-snmp_authfail_trap(void)
+void snmp_authfail_trap(void)
 {
   u8_t enable;
   snmp_get_snmpenableauthentraps(&enable);
@@ -429,35 +422,35 @@ snmp_varbind_list_sum(struct snmp_varbind_root *root)
 
   tot_len = 0;
   vb = root->tail;
-  while ( vb != NULL )
+  while (vb != NULL)
   {
     /* encoded value lenght depends on type */
     switch (vb->value_type)
     {
-      case (SNMP_ASN1_UNIV | SNMP_ASN1_PRIMIT | SNMP_ASN1_INTEG):
-        sint_ptr = vb->value;
-        snmp_asn1_enc_s32t_cnt(*sint_ptr, &vb->vlen);
-        break;
-      case (SNMP_ASN1_APPLIC | SNMP_ASN1_PRIMIT | SNMP_ASN1_COUNTER):
-      case (SNMP_ASN1_APPLIC | SNMP_ASN1_PRIMIT | SNMP_ASN1_GAUGE):
-      case (SNMP_ASN1_APPLIC | SNMP_ASN1_PRIMIT | SNMP_ASN1_TIMETICKS):
-        uint_ptr = vb->value;
-        snmp_asn1_enc_u32t_cnt(*uint_ptr, &vb->vlen);
-        break;
-      case (SNMP_ASN1_UNIV | SNMP_ASN1_PRIMIT | SNMP_ASN1_OC_STR):
-      case (SNMP_ASN1_UNIV | SNMP_ASN1_PRIMIT | SNMP_ASN1_NUL):
-      case (SNMP_ASN1_APPLIC | SNMP_ASN1_PRIMIT | SNMP_ASN1_IPADDR):
-      case (SNMP_ASN1_APPLIC | SNMP_ASN1_PRIMIT | SNMP_ASN1_OPAQUE):
-        vb->vlen = vb->value_len;
-        break;
-      case (SNMP_ASN1_UNIV | SNMP_ASN1_PRIMIT | SNMP_ASN1_OBJ_ID):
-        sint_ptr = vb->value;
-        snmp_asn1_enc_oid_cnt(vb->value_len / sizeof(s32_t), sint_ptr, &vb->vlen);
-        break;
-      default:
-        /* unsupported type */
-        vb->vlen = 0;
-        break;
+    case (SNMP_ASN1_UNIV | SNMP_ASN1_PRIMIT | SNMP_ASN1_INTEG):
+      sint_ptr = vb->value;
+      snmp_asn1_enc_s32t_cnt(*sint_ptr, &vb->vlen);
+      break;
+    case (SNMP_ASN1_APPLIC | SNMP_ASN1_PRIMIT | SNMP_ASN1_COUNTER):
+    case (SNMP_ASN1_APPLIC | SNMP_ASN1_PRIMIT | SNMP_ASN1_GAUGE):
+    case (SNMP_ASN1_APPLIC | SNMP_ASN1_PRIMIT | SNMP_ASN1_TIMETICKS):
+      uint_ptr = vb->value;
+      snmp_asn1_enc_u32t_cnt(*uint_ptr, &vb->vlen);
+      break;
+    case (SNMP_ASN1_UNIV | SNMP_ASN1_PRIMIT | SNMP_ASN1_OC_STR):
+    case (SNMP_ASN1_UNIV | SNMP_ASN1_PRIMIT | SNMP_ASN1_NUL):
+    case (SNMP_ASN1_APPLIC | SNMP_ASN1_PRIMIT | SNMP_ASN1_IPADDR):
+    case (SNMP_ASN1_APPLIC | SNMP_ASN1_PRIMIT | SNMP_ASN1_OPAQUE):
+      vb->vlen = vb->value_len;
+      break;
+    case (SNMP_ASN1_UNIV | SNMP_ASN1_PRIMIT | SNMP_ASN1_OBJ_ID):
+      sint_ptr = vb->value;
+      snmp_asn1_enc_oid_cnt(vb->value_len / sizeof(s32_t), sint_ptr, &vb->vlen);
+      break;
+    default:
+      /* unsupported type */
+      vb->vlen = 0;
+      break;
     };
     /* encoding length of value length field */
     snmp_asn1_enc_length_cnt(vb->vlen, &vb->vlenlen);
@@ -627,7 +620,7 @@ snmp_varbind_list_enc(struct snmp_varbind_root *root, struct pbuf *p, u16_t ofs)
   ofs += root->seqlenlen;
 
   vb = root->head;
-  while ( vb != NULL )
+  while (vb != NULL)
   {
     snmp_asn1_enc_type(p, ofs, (SNMP_ASN1_UNIV | SNMP_ASN1_CONSTR | SNMP_ASN1_SEQ));
     ofs += 1;
@@ -648,31 +641,31 @@ snmp_varbind_list_enc(struct snmp_varbind_root *root, struct pbuf *p, u16_t ofs)
 
     switch (vb->value_type)
     {
-      case (SNMP_ASN1_UNIV | SNMP_ASN1_PRIMIT | SNMP_ASN1_INTEG):
-        sint_ptr = vb->value;
-        snmp_asn1_enc_s32t(p, ofs, vb->vlen, *sint_ptr);
-        break;
-      case (SNMP_ASN1_APPLIC | SNMP_ASN1_PRIMIT | SNMP_ASN1_COUNTER):
-      case (SNMP_ASN1_APPLIC | SNMP_ASN1_PRIMIT | SNMP_ASN1_GAUGE):
-      case (SNMP_ASN1_APPLIC | SNMP_ASN1_PRIMIT | SNMP_ASN1_TIMETICKS):
-        uint_ptr = vb->value;
-        snmp_asn1_enc_u32t(p, ofs, vb->vlen, *uint_ptr);
-        break;
-      case (SNMP_ASN1_UNIV | SNMP_ASN1_PRIMIT | SNMP_ASN1_OC_STR):
-      case (SNMP_ASN1_APPLIC | SNMP_ASN1_PRIMIT | SNMP_ASN1_IPADDR):
-      case (SNMP_ASN1_APPLIC | SNMP_ASN1_PRIMIT | SNMP_ASN1_OPAQUE):
-        raw_ptr = vb->value;
-        snmp_asn1_enc_raw(p, ofs, vb->vlen, raw_ptr);
-        break;
-      case (SNMP_ASN1_UNIV | SNMP_ASN1_PRIMIT | SNMP_ASN1_NUL):
-        break;
-      case (SNMP_ASN1_UNIV | SNMP_ASN1_PRIMIT | SNMP_ASN1_OBJ_ID):
-        sint_ptr = vb->value;
-        snmp_asn1_enc_oid(p, ofs, vb->value_len / sizeof(s32_t), sint_ptr);
-        break;
-      default:
-        /* unsupported type */
-        break;
+    case (SNMP_ASN1_UNIV | SNMP_ASN1_PRIMIT | SNMP_ASN1_INTEG):
+      sint_ptr = vb->value;
+      snmp_asn1_enc_s32t(p, ofs, vb->vlen, *sint_ptr);
+      break;
+    case (SNMP_ASN1_APPLIC | SNMP_ASN1_PRIMIT | SNMP_ASN1_COUNTER):
+    case (SNMP_ASN1_APPLIC | SNMP_ASN1_PRIMIT | SNMP_ASN1_GAUGE):
+    case (SNMP_ASN1_APPLIC | SNMP_ASN1_PRIMIT | SNMP_ASN1_TIMETICKS):
+      uint_ptr = vb->value;
+      snmp_asn1_enc_u32t(p, ofs, vb->vlen, *uint_ptr);
+      break;
+    case (SNMP_ASN1_UNIV | SNMP_ASN1_PRIMIT | SNMP_ASN1_OC_STR):
+    case (SNMP_ASN1_APPLIC | SNMP_ASN1_PRIMIT | SNMP_ASN1_IPADDR):
+    case (SNMP_ASN1_APPLIC | SNMP_ASN1_PRIMIT | SNMP_ASN1_OPAQUE):
+      raw_ptr = vb->value;
+      snmp_asn1_enc_raw(p, ofs, vb->vlen, raw_ptr);
+      break;
+    case (SNMP_ASN1_UNIV | SNMP_ASN1_PRIMIT | SNMP_ASN1_NUL):
+      break;
+    case (SNMP_ASN1_UNIV | SNMP_ASN1_PRIMIT | SNMP_ASN1_OBJ_ID):
+      sint_ptr = vb->value;
+      snmp_asn1_enc_oid(p, ofs, vb->value_len / sizeof(s32_t), sint_ptr);
+      break;
+    default:
+      /* unsupported type */
+      break;
     };
     ofs += vb->vlen;
     vb = vb->next;

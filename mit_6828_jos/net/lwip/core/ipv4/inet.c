@@ -42,14 +42,14 @@
 
 /* Here for now until needed in other places in lwIP */
 #ifndef isprint
-#define in_range(c, lo, up)  ((u8_t)c >= lo && (u8_t)c <= up)
-#define isprint(c)           in_range(c, 0x20, 0x7f)
-#define isdigit(c)           in_range(c, '0', '9')
-#define isxdigit(c)          (isdigit(c) || in_range(c, 'a', 'f') || in_range(c, 'A', 'F'))
-#define islower(c)           in_range(c, 'a', 'z')
-#define isspace(c)           (c == ' ' || c == '\f' || c == '\n' || c == '\r' || c == '\t' || c == '\v')
-#endif    
-    
+#define in_range(c, lo, up) ((u8_t)c >= lo && (u8_t)c <= up)
+#define isprint(c) in_range(c, 0x20, 0x7f)
+#define isdigit(c) in_range(c, '0', '9')
+#define isxdigit(c) (isdigit(c) || in_range(c, 'a', 'f') || in_range(c, 'A', 'F'))
+#define islower(c) in_range(c, 'a', 'z')
+#define isspace(c) (c == ' ' || c == '\f' || c == '\n' || c == '\r' || c == '\t' || c == '\v')
+#endif
+
 /**
  * Ascii internet address interpretation routine.
  * The value returned is in network order.
@@ -57,12 +57,12 @@
  * @param cp IP address in ascii represenation (e.g. "127.0.0.1")
  * @return ip address in network order
  */
-u32_t
-inet_addr(const char *cp)
+u32_t inet_addr(const char *cp)
 {
   struct in_addr val;
 
-  if (inet_aton(cp, &val)) {
+  if (inet_aton(cp, &val))
+  {
     return (val.s_addr);
   }
   return (INADDR_NONE);
@@ -79,8 +79,7 @@ inet_addr(const char *cp)
  * @param addr pointer to which to save the ip address in network order
  * @return 1 if cp could be converted to addr, 0 on failure
  */
-int
-inet_aton(const char *cp, struct in_addr *addr)
+int inet_aton(const char *cp, struct in_addr *addr)
 {
   u32_t val;
   int base, n, c;
@@ -88,7 +87,8 @@ inet_aton(const char *cp, struct in_addr *addr)
   u32_t *pp = parts;
 
   c = *cp;
-  for (;;) {
+  for (;;)
+  {
     /*
      * Collect number up to ``.''.
      * Values are specified as for C:
@@ -98,25 +98,34 @@ inet_aton(const char *cp, struct in_addr *addr)
       return (0);
     val = 0;
     base = 10;
-    if (c == '0') {
+    if (c == '0')
+    {
       c = *++cp;
-      if (c == 'x' || c == 'X') {
+      if (c == 'x' || c == 'X')
+      {
         base = 16;
         c = *++cp;
-      } else
+      }
+      else
         base = 8;
     }
-    for (;;) {
-      if (isdigit(c)) {
+    for (;;)
+    {
+      if (isdigit(c))
+      {
         val = (val * base) + (int)(c - '0');
         c = *++cp;
-      } else if (base == 16 && isxdigit(c)) {
+      }
+      else if (base == 16 && isxdigit(c))
+      {
         val = (val << 4) | (int)(c + 10 - (islower(c) ? 'a' : 'A'));
         c = *++cp;
-      } else
+      }
+      else
         break;
     }
-    if (c == '.') {
+    if (c == '.')
+    {
       /*
        * Internet format:
        *  a.b.c.d
@@ -127,7 +136,8 @@ inet_aton(const char *cp, struct in_addr *addr)
         return (0);
       *pp++ = val;
       c = *++cp;
-    } else
+    }
+    else
       break;
   }
   /*
@@ -140,27 +150,28 @@ inet_aton(const char *cp, struct in_addr *addr)
    * the number of parts specified.
    */
   n = pp - parts + 1;
-  switch (n) {
+  switch (n)
+  {
 
   case 0:
-    return (0);       /* initial nondigit */
+    return (0); /* initial nondigit */
 
-  case 1:             /* a -- 32 bits */
+  case 1: /* a -- 32 bits */
     break;
 
-  case 2:             /* a.b -- 8.24 bits */
+  case 2: /* a.b -- 8.24 bits */
     if (val > 0xffffffUL)
       return (0);
     val |= parts[0] << 24;
     break;
 
-  case 3:             /* a.b.c -- 8.8.16 bits */
+  case 3: /* a.b.c -- 8.8.16 bits */
     if (val > 0xffff)
       return (0);
     val |= (parts[0] << 24) | (parts[1] << 16);
     break;
 
-  case 4:             /* a.b.c.d -- 8.8.8.8 bits */
+  case 4: /* a.b.c.d -- 8.8.8.8 bits */
     if (val > 0xff)
       return (0);
     val |= (parts[0] << 24) | (parts[1] << 16) | (parts[2] << 8);
@@ -193,14 +204,16 @@ inet_ntoa(struct in_addr addr)
 
   rp = str;
   ap = (u8_t *)&s_addr;
-  for(n = 0; n < 4; n++) {
+  for (n = 0; n < 4; n++)
+  {
     i = 0;
-    do {
+    do
+    {
       rem = *ap % (u8_t)10;
       *ap /= (u8_t)10;
       inv[i++] = '0' + rem;
-    } while(*ap);
-    while(i--)
+    } while (*ap);
+    while (i--)
       *rp++ = inv[i];
     *rp++ = '.';
     ap++;
@@ -230,8 +243,7 @@ inet_ntoa(struct in_addr addr)
  * @param n u16_t in host byte order
  * @return n in network byte order
  */
-u16_t
-htons(u16_t n)
+u16_t htons(u16_t n)
 {
   return ((n & 0xff) << 8) | ((n & 0xff00) >> 8);
 }
@@ -242,8 +254,7 @@ htons(u16_t n)
  * @param n u16_t in network byte order
  * @return n in host byte order
  */
-u16_t
-ntohs(u16_t n)
+u16_t ntohs(u16_t n)
 {
   return htons(n);
 }
@@ -254,13 +265,12 @@ ntohs(u16_t n)
  * @param n u32_t in host byte order
  * @return n in network byte order
  */
-u32_t
-htonl(u32_t n)
+u32_t htonl(u32_t n)
 {
   return ((n & 0xff) << 24) |
-    ((n & 0xff00) << 8) |
-    ((n & 0xff0000UL) >> 8) |
-    ((n & 0xff000000UL) >> 24);
+         ((n & 0xff00) << 8) |
+         ((n & 0xff0000UL) >> 8) |
+         ((n & 0xff000000UL) >> 24);
 }
 
 /**
@@ -269,8 +279,7 @@ htonl(u32_t n)
  * @param n u32_t in network byte order
  * @return n in host byte order
  */
-u32_t
-ntohl(u32_t n)
+u32_t ntohl(u32_t n)
 {
   return htonl(n);
 }

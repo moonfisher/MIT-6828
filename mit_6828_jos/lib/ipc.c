@@ -23,13 +23,17 @@ int32_t
 ipc_recv(envid_t *from_env_store, void *pg, int *perm_store)
 {
 	// LAB 4: Your code here.
-	if (pg == NULL) {
+	if (pg == NULL)
+	{
 		pg = (void *)-1;
 	}
 	int r = sys_ipc_recv(pg);
-	if (r < 0) {				//系统调用失败
-		if (from_env_store) *from_env_store = 0;
-		if (perm_store) *perm_store = 0;
+	if (r < 0)
+	{ //系统调用失败
+		if (from_env_store)
+			*from_env_store = 0;
+		if (perm_store)
+			*perm_store = 0;
 		return r;
 	}
 	if (from_env_store)
@@ -47,21 +51,27 @@ ipc_recv(envid_t *from_env_store, void *pg, int *perm_store)
 //   Use sys_yield() to be CPU-friendly.
 //   If 'pg' is null, pass sys_ipc_try_send a value that it will understand
 //   as meaning "no page".  (Zero is not the right value.)
-void
-ipc_send(envid_t to_env, uint32_t val, void *pg, int perm)
+void ipc_send(envid_t to_env, uint32_t val, void *pg, int perm)
 {
 	// LAB 4: Your code here.
-	if (pg == NULL) {
+	if (pg == NULL)
+	{
 		pg = (void *)-1;
 	}
 	int r;
-	while(1) {
+	while (1)
+	{
 		r = sys_ipc_try_send(to_env, val, pg, perm);
-		if (r == 0) {		//发送成功
+		if (r == 0)
+		{ //发送成功
 			return;
-		} else if (r == -E_IPC_NOT_RECV) {	//接收进程没有准备好
+		}
+		else if (r == -E_IPC_NOT_RECV)
+		{ //接收进程没有准备好
 			sys_yield();
-		} else {			//其它错误
+		}
+		else
+		{ //其它错误
 			panic("ipc_send():%e", r);
 		}
 	}

@@ -62,13 +62,11 @@ static void snmp_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, struct ip_
 static err_t snmp_pdu_header_check(struct pbuf *p, u16_t ofs, u16_t pdu_len, u16_t *ofs_ret, struct snmp_msg_pstat *m_stat);
 static err_t snmp_pdu_dec_varbindlist(struct pbuf *p, u16_t ofs, u16_t *ofs_ret, struct snmp_msg_pstat *m_stat);
 
-
 /**
  * Starts SNMP Agent.
  * Allocates UDP pcb and binds it to IP_ADDR_ANY port 161.
  */
-void
-snmp_init(void)
+void snmp_init(void)
 {
   struct snmp_msg_pstat *msg_ps;
   u8_t i;
@@ -80,7 +78,7 @@ snmp_init(void)
     udp_bind(snmp1_pcb, IP_ADDR_ANY, SNMP_IN_PORT);
   }
   msg_ps = &msg_input_list[0];
-  for (i=0; i<SNMP_CONCURRENT_REQUESTS; i++)
+  for (i = 0; i < SNMP_CONCURRENT_REQUESTS; i++)
   {
     msg_ps->state = SNMP_MSG_EMPTY;
     msg_ps->error_index = 0;
@@ -120,7 +118,7 @@ snmp_ok_response(struct snmp_msg_pstat *msg_ps)
   }
   else
   {
-    LWIP_DEBUGF(SNMP_MSG_DEBUG, ("snmp_msg_event = %"S32_F"\n",msg_ps->error_status));
+    LWIP_DEBUGF(SNMP_MSG_DEBUG, ("snmp_msg_event = %" S32_F "\n", msg_ps->error_status));
   }
   /* free varbinds (if available) */
   snmp_varbind_list_free(&msg_ps->invb);
@@ -137,7 +135,7 @@ snmp_ok_response(struct snmp_msg_pstat *msg_ps)
 static void
 snmp_msg_get_event(u8_t request_id, struct snmp_msg_pstat *msg_ps)
 {
-  LWIP_DEBUGF(SNMP_MSG_DEBUG, ("snmp_msg_get_event: msg_ps->state==%"U16_F"\n",(u16_t)msg_ps->state));
+  LWIP_DEBUGF(SNMP_MSG_DEBUG, ("snmp_msg_get_event: msg_ps->state==%" U16_F "\n", (u16_t)msg_ps->state));
 
   if (msg_ps->state == SNMP_MSG_EXTERNAL_GET_OBJDEF)
   {
@@ -159,7 +157,7 @@ snmp_msg_get_event(u8_t request_id, struct snmp_msg_pstat *msg_ps)
     {
       en->get_object_def_pc(request_id, np.ident_len, np.ident);
       /* search failed, object id points to unknown object (nosuchname) */
-      snmp_error_response(msg_ps,SNMP_ES_NOSUCHNAME);
+      snmp_error_response(msg_ps, SNMP_ES_NOSUCHNAME);
     }
   }
   else if (msg_ps->state == SNMP_MSG_EXTERNAL_GET_VALUE)
@@ -172,7 +170,7 @@ snmp_msg_get_event(u8_t request_id, struct snmp_msg_pstat *msg_ps)
 
     /* allocate output varbind */
     vb = (struct snmp_varbind *)mem_malloc(sizeof(struct snmp_varbind));
-    LWIP_ASSERT("vb != NULL",vb != NULL);
+    LWIP_ASSERT("vb != NULL", vb != NULL);
     if (vb != NULL)
     {
       vb->next = NULL;
@@ -186,11 +184,11 @@ snmp_msg_get_event(u8_t request_id, struct snmp_msg_pstat *msg_ps)
       msg_ps->vb_ptr->ident_len = 0;
 
       vb->value_type = msg_ps->ext_object_def.asn_type;
-      vb->value_len =  msg_ps->ext_object_def.v_len;
+      vb->value_len = msg_ps->ext_object_def.v_len;
       if (vb->value_len > 0)
       {
         vb->value = mem_malloc(vb->value_len);
-        LWIP_ASSERT("vb->value != NULL",vb->value != NULL);
+        LWIP_ASSERT("vb->value != NULL", vb->value != NULL);
         if (vb->value != NULL)
         {
           en->get_value_a(request_id, &msg_ps->ext_object_def, vb->value_len, vb->value);
@@ -206,7 +204,7 @@ snmp_msg_get_event(u8_t request_id, struct snmp_msg_pstat *msg_ps)
           msg_ps->vb_ptr->ident = vb->ident;
           msg_ps->vb_ptr->ident_len = vb->ident_len;
           mem_free(vb);
-          snmp_error_response(msg_ps,SNMP_ES_TOOBIG);
+          snmp_error_response(msg_ps, SNMP_ES_TOOBIG);
         }
       }
       else
@@ -224,7 +222,7 @@ snmp_msg_get_event(u8_t request_id, struct snmp_msg_pstat *msg_ps)
     {
       en->get_value_pc(request_id, &msg_ps->ext_object_def);
       LWIP_DEBUGF(SNMP_MSG_DEBUG, ("snmp_msg_event: no outvb space\n"));
-      snmp_error_response(msg_ps,SNMP_ES_TOOBIG);
+      snmp_error_response(msg_ps, SNMP_ES_TOOBIG);
     }
   }
 
@@ -243,16 +241,16 @@ snmp_msg_get_event(u8_t request_id, struct snmp_msg_pstat *msg_ps)
       msg_ps->vb_ptr = msg_ps->vb_ptr->next;
     }
     /** test object identifier for .iso.org.dod.internet prefix */
-    if (snmp_iso_prefix_tst(msg_ps->vb_ptr->ident_len,  msg_ps->vb_ptr->ident))
+    if (snmp_iso_prefix_tst(msg_ps->vb_ptr->ident_len, msg_ps->vb_ptr->ident))
     {
-      mn = snmp_search_tree((struct mib_node*)&internet, msg_ps->vb_ptr->ident_len - 4,
-                             msg_ps->vb_ptr->ident + 4, &np);
+      mn = snmp_search_tree((struct mib_node *)&internet, msg_ps->vb_ptr->ident_len - 4,
+                            msg_ps->vb_ptr->ident + 4, &np);
       if (mn != NULL)
       {
         if (mn->node_type == MIB_NODE_EX)
         {
           /* external object */
-          struct mib_external_node *en = (struct mib_external_node*)mn;
+          struct mib_external_node *en = (struct mib_external_node *)mn;
 
           msg_ps->state = SNMP_MSG_EXTERNAL_GET_OBJDEF;
           /* save en && args in msg_ps!! */
@@ -275,7 +273,7 @@ snmp_msg_get_event(u8_t request_id, struct snmp_msg_pstat *msg_ps)
           else
           {
             /* search failed, object id points to unknown object (nosuchname) */
-            mn =  NULL;
+            mn = NULL;
           }
           if (mn != NULL)
           {
@@ -284,7 +282,7 @@ snmp_msg_get_event(u8_t request_id, struct snmp_msg_pstat *msg_ps)
             msg_ps->state = SNMP_MSG_INTERNAL_GET_VALUE;
             /* allocate output varbind */
             vb = (struct snmp_varbind *)mem_malloc(sizeof(struct snmp_varbind));
-            LWIP_ASSERT("vb != NULL",vb != NULL);
+            LWIP_ASSERT("vb != NULL", vb != NULL);
             if (vb != NULL)
             {
               vb->next = NULL;
@@ -302,7 +300,7 @@ snmp_msg_get_event(u8_t request_id, struct snmp_msg_pstat *msg_ps)
               if (vb->value_len > 0)
               {
                 vb->value = mem_malloc(vb->value_len);
-                LWIP_ASSERT("vb->value != NULL",vb->value != NULL);
+                LWIP_ASSERT("vb->value != NULL", vb->value != NULL);
                 if (vb->value != NULL)
                 {
                   mn->get_value(&object_def, vb->value_len, vb->value);
@@ -316,7 +314,7 @@ snmp_msg_get_event(u8_t request_id, struct snmp_msg_pstat *msg_ps)
                   msg_ps->vb_ptr->ident = vb->ident;
                   msg_ps->vb_ptr->ident_len = vb->ident_len;
                   mem_free(vb);
-                  snmp_error_response(msg_ps,SNMP_ES_TOOBIG);
+                  snmp_error_response(msg_ps, SNMP_ES_TOOBIG);
                 }
               }
               else
@@ -331,7 +329,7 @@ snmp_msg_get_event(u8_t request_id, struct snmp_msg_pstat *msg_ps)
             else
             {
               LWIP_DEBUGF(SNMP_MSG_DEBUG, ("snmp_msg_event: couldn't allocate outvb space\n"));
-              snmp_error_response(msg_ps,SNMP_ES_TOOBIG);
+              snmp_error_response(msg_ps, SNMP_ES_TOOBIG);
             }
           }
         }
@@ -344,7 +342,7 @@ snmp_msg_get_event(u8_t request_id, struct snmp_msg_pstat *msg_ps)
     if (mn == NULL)
     {
       /* mn == NULL, noSuchName */
-      snmp_error_response(msg_ps,SNMP_ES_NOSUCHNAME);
+      snmp_error_response(msg_ps, SNMP_ES_NOSUCHNAME);
     }
   }
   if ((msg_ps->state == SNMP_MSG_SEARCH_OBJ) &&
@@ -363,7 +361,7 @@ snmp_msg_get_event(u8_t request_id, struct snmp_msg_pstat *msg_ps)
 static void
 snmp_msg_getnext_event(u8_t request_id, struct snmp_msg_pstat *msg_ps)
 {
-  LWIP_DEBUGF(SNMP_MSG_DEBUG, ("snmp_msg_getnext_event: msg_ps->state==%"U16_F"\n",(u16_t)msg_ps->state));
+  LWIP_DEBUGF(SNMP_MSG_DEBUG, ("snmp_msg_getnext_event: msg_ps->state==%" U16_F "\n", (u16_t)msg_ps->state));
 
   if (msg_ps->state == SNMP_MSG_EXTERNAL_GET_OBJDEF)
   {
@@ -383,7 +381,7 @@ snmp_msg_getnext_event(u8_t request_id, struct snmp_msg_pstat *msg_ps)
     {
       en->get_object_def_pc(request_id, 1, &msg_ps->ext_oid.id[msg_ps->ext_oid.len - 1]);
       /* search failed, object id points to unknown object (nosuchname) */
-      snmp_error_response(msg_ps,SNMP_ES_NOSUCHNAME);
+      snmp_error_response(msg_ps, SNMP_ES_NOSUCHNAME);
     }
   }
   else if (msg_ps->state == SNMP_MSG_EXTERNAL_GET_VALUE)
@@ -408,7 +406,7 @@ snmp_msg_getnext_event(u8_t request_id, struct snmp_msg_pstat *msg_ps)
     {
       en->get_value_pc(request_id, &msg_ps->ext_object_def);
       LWIP_DEBUGF(SNMP_MSG_DEBUG, ("snmp_msg_getnext_event: couldn't allocate outvb space\n"));
-      snmp_error_response(msg_ps,SNMP_ES_TOOBIG);
+      snmp_error_response(msg_ps, SNMP_ES_TOOBIG);
     }
   }
 
@@ -431,14 +429,14 @@ snmp_msg_getnext_event(u8_t request_id, struct snmp_msg_pstat *msg_ps)
       if (msg_ps->vb_ptr->ident_len > 3)
       {
         /* can offset ident_len and ident */
-        mn = snmp_expand_tree((struct mib_node*)&internet,
+        mn = snmp_expand_tree((struct mib_node *)&internet,
                               msg_ps->vb_ptr->ident_len - 4,
                               msg_ps->vb_ptr->ident + 4, &oid);
       }
       else
       {
         /* can't offset ident_len -4, ident + 4 */
-        mn = snmp_expand_tree((struct mib_node*)&internet, 0, NULL, &oid);
+        mn = snmp_expand_tree((struct mib_node *)&internet, 0, NULL, &oid);
       }
     }
     else
@@ -450,7 +448,7 @@ snmp_msg_getnext_event(u8_t request_id, struct snmp_msg_pstat *msg_ps)
       if (mn->node_type == MIB_NODE_EX)
       {
         /* external object */
-        struct mib_external_node *en = (struct mib_external_node*)mn;
+        struct mib_external_node *en = (struct mib_external_node *)mn;
 
         msg_ps->state = SNMP_MSG_EXTERNAL_GET_OBJDEF;
         /* save en && args in msg_ps!! */
@@ -480,14 +478,14 @@ snmp_msg_getnext_event(u8_t request_id, struct snmp_msg_pstat *msg_ps)
         else
         {
           LWIP_DEBUGF(SNMP_MSG_DEBUG, ("snmp_recv couldn't allocate outvb space\n"));
-          snmp_error_response(msg_ps,SNMP_ES_TOOBIG);
+          snmp_error_response(msg_ps, SNMP_ES_TOOBIG);
         }
       }
     }
     if (mn == NULL)
     {
       /* mn == NULL, noSuchName */
-      snmp_error_response(msg_ps,SNMP_ES_NOSUCHNAME);
+      snmp_error_response(msg_ps, SNMP_ES_NOSUCHNAME);
     }
   }
   if ((msg_ps->state == SNMP_MSG_SEARCH_OBJ) &&
@@ -506,7 +504,7 @@ snmp_msg_getnext_event(u8_t request_id, struct snmp_msg_pstat *msg_ps)
 static void
 snmp_msg_set_event(u8_t request_id, struct snmp_msg_pstat *msg_ps)
 {
-  LWIP_DEBUGF(SNMP_MSG_DEBUG, ("snmp_msg_set_event: msg_ps->state==%"U16_F"\n",(u16_t)msg_ps->state));
+  LWIP_DEBUGF(SNMP_MSG_DEBUG, ("snmp_msg_set_event: msg_ps->state==%" U16_F "\n", (u16_t)msg_ps->state));
 
   if (msg_ps->state == SNMP_MSG_EXTERNAL_GET_OBJDEF)
   {
@@ -528,7 +526,7 @@ snmp_msg_set_event(u8_t request_id, struct snmp_msg_pstat *msg_ps)
     {
       en->get_object_def_pc(request_id, np.ident_len, np.ident);
       /* search failed, object id points to unknown object (nosuchname) */
-      snmp_error_response(msg_ps,SNMP_ES_NOSUCHNAME);
+      snmp_error_response(msg_ps, SNMP_ES_NOSUCHNAME);
     }
   }
   else if (msg_ps->state == SNMP_MSG_EXTERNAL_SET_TEST)
@@ -540,25 +538,25 @@ snmp_msg_set_event(u8_t request_id, struct snmp_msg_pstat *msg_ps)
 
     if (msg_ps->ext_object_def.access == MIB_OBJECT_READ_WRITE)
     {
-       if ((msg_ps->ext_object_def.asn_type == msg_ps->vb_ptr->value_type) &&
-           (en->set_test_a(request_id,&msg_ps->ext_object_def,
-                           msg_ps->vb_ptr->value_len,msg_ps->vb_ptr->value) != 0))
+      if ((msg_ps->ext_object_def.asn_type == msg_ps->vb_ptr->value_type) &&
+          (en->set_test_a(request_id, &msg_ps->ext_object_def,
+                          msg_ps->vb_ptr->value_len, msg_ps->vb_ptr->value) != 0))
       {
         msg_ps->state = SNMP_MSG_SEARCH_OBJ;
         msg_ps->vb_idx += 1;
       }
       else
       {
-        en->set_test_pc(request_id,&msg_ps->ext_object_def);
+        en->set_test_pc(request_id, &msg_ps->ext_object_def);
         /* bad value */
-        snmp_error_response(msg_ps,SNMP_ES_BADVALUE);
+        snmp_error_response(msg_ps, SNMP_ES_BADVALUE);
       }
     }
     else
     {
-      en->set_test_pc(request_id,&msg_ps->ext_object_def);
+      en->set_test_pc(request_id, &msg_ps->ext_object_def);
       /* object not available for set */
-      snmp_error_response(msg_ps,SNMP_ES_NOSUCHNAME);
+      snmp_error_response(msg_ps, SNMP_ES_NOSUCHNAME);
     }
   }
   else if (msg_ps->state == SNMP_MSG_EXTERNAL_GET_OBJDEF_S)
@@ -576,13 +574,13 @@ snmp_msg_set_event(u8_t request_id, struct snmp_msg_pstat *msg_ps)
     {
       msg_ps->state = SNMP_MSG_EXTERNAL_SET_VALUE;
       en->set_value_q(request_id, &msg_ps->ext_object_def,
-                      msg_ps->vb_ptr->value_len,msg_ps->vb_ptr->value);
+                      msg_ps->vb_ptr->value_len, msg_ps->vb_ptr->value);
     }
     else
     {
       en->get_object_def_pc(request_id, np.ident_len, np.ident);
       /* set_value failed, object has disappeared for some odd reason?? */
-      snmp_error_response(msg_ps,SNMP_ES_GENERROR);
+      snmp_error_response(msg_ps, SNMP_ES_GENERROR);
     }
   }
   else if (msg_ps->state == SNMP_MSG_EXTERNAL_SET_VALUE)
@@ -614,16 +612,16 @@ snmp_msg_set_event(u8_t request_id, struct snmp_msg_pstat *msg_ps)
       msg_ps->vb_ptr = msg_ps->vb_ptr->next;
     }
     /** test object identifier for .iso.org.dod.internet prefix */
-    if (snmp_iso_prefix_tst(msg_ps->vb_ptr->ident_len,  msg_ps->vb_ptr->ident))
+    if (snmp_iso_prefix_tst(msg_ps->vb_ptr->ident_len, msg_ps->vb_ptr->ident))
     {
-      mn = snmp_search_tree((struct mib_node*)&internet, msg_ps->vb_ptr->ident_len - 4,
-                             msg_ps->vb_ptr->ident + 4, &np);
+      mn = snmp_search_tree((struct mib_node *)&internet, msg_ps->vb_ptr->ident_len - 4,
+                            msg_ps->vb_ptr->ident + 4, &np);
       if (mn != NULL)
       {
         if (mn->node_type == MIB_NODE_EX)
         {
           /* external object */
-          struct mib_external_node *en = (struct mib_external_node*)mn;
+          struct mib_external_node *en = (struct mib_external_node *)mn;
 
           msg_ps->state = SNMP_MSG_EXTERNAL_GET_OBJDEF;
           /* save en && args in msg_ps!! */
@@ -655,7 +653,7 @@ snmp_msg_set_event(u8_t request_id, struct snmp_msg_pstat *msg_ps)
             if (object_def.access == MIB_OBJECT_READ_WRITE)
             {
               if ((object_def.asn_type == msg_ps->vb_ptr->value_type) &&
-                  (mn->set_test(&object_def,msg_ps->vb_ptr->value_len,msg_ps->vb_ptr->value) != 0))
+                  (mn->set_test(&object_def, msg_ps->vb_ptr->value_len, msg_ps->vb_ptr->value) != 0))
               {
                 msg_ps->state = SNMP_MSG_SEARCH_OBJ;
                 msg_ps->vb_idx += 1;
@@ -663,13 +661,13 @@ snmp_msg_set_event(u8_t request_id, struct snmp_msg_pstat *msg_ps)
               else
               {
                 /* bad value */
-                snmp_error_response(msg_ps,SNMP_ES_BADVALUE);
+                snmp_error_response(msg_ps, SNMP_ES_BADVALUE);
               }
             }
             else
             {
               /* object not available for set */
-              snmp_error_response(msg_ps,SNMP_ES_NOSUCHNAME);
+              snmp_error_response(msg_ps, SNMP_ES_NOSUCHNAME);
             }
           }
         }
@@ -682,7 +680,7 @@ snmp_msg_set_event(u8_t request_id, struct snmp_msg_pstat *msg_ps)
     if (mn == NULL)
     {
       /* mn == NULL, noSuchName */
-      snmp_error_response(msg_ps,SNMP_ES_NOSUCHNAME);
+      snmp_error_response(msg_ps, SNMP_ES_NOSUCHNAME);
     }
   }
 
@@ -709,8 +707,8 @@ snmp_msg_set_event(u8_t request_id, struct snmp_msg_pstat *msg_ps)
       msg_ps->vb_ptr = msg_ps->vb_ptr->next;
     }
     /* skip iso prefix test, was done previously while settesting() */
-    mn = snmp_search_tree((struct mib_node*)&internet, msg_ps->vb_ptr->ident_len - 4,
-                           msg_ps->vb_ptr->ident + 4, &np);
+    mn = snmp_search_tree((struct mib_node *)&internet, msg_ps->vb_ptr->ident_len - 4,
+                          msg_ps->vb_ptr->ident + 4, &np);
     /* check if object is still available
        (e.g. external hot-plug thingy present?) */
     if (mn != NULL)
@@ -718,7 +716,7 @@ snmp_msg_set_event(u8_t request_id, struct snmp_msg_pstat *msg_ps)
       if (mn->node_type == MIB_NODE_EX)
       {
         /* external object */
-        struct mib_external_node *en = (struct mib_external_node*)mn;
+        struct mib_external_node *en = (struct mib_external_node *)mn;
 
         msg_ps->state = SNMP_MSG_EXTERNAL_GET_OBJDEF_S;
         /* save en && args in msg_ps!! */
@@ -735,7 +733,7 @@ snmp_msg_set_event(u8_t request_id, struct snmp_msg_pstat *msg_ps)
         msg_ps->state = SNMP_MSG_INTERNAL_GET_OBJDEF_S;
         mn->get_object_def(np.ident_len, np.ident, &object_def);
         msg_ps->state = SNMP_MSG_INTERNAL_SET_VALUE;
-        mn->set_value(&object_def,msg_ps->vb_ptr->value_len,msg_ps->vb_ptr->value);
+        mn->set_value(&object_def, msg_ps->vb_ptr->value_len, msg_ps->vb_ptr->value);
         msg_ps->vb_idx += 1;
       }
     }
@@ -754,15 +752,13 @@ snmp_msg_set_event(u8_t request_id, struct snmp_msg_pstat *msg_ps)
   }
 }
 
-
 /**
  * Handle one internal or external event.
  * Called for one async event. (recv external/private answer)
  *
  * @param request_id identifies requests from 0 to (SNMP_CONCURRENT_REQUESTS-1)
  */
-void
-snmp_msg_event(u8_t request_id)
+void snmp_msg_event(u8_t request_id)
 {
   struct snmp_msg_pstat *msg_ps;
 
@@ -777,13 +773,12 @@ snmp_msg_event(u8_t request_id)
     {
       snmp_msg_get_event(request_id, msg_ps);
     }
-    else if(msg_ps->rt == SNMP_ASN1_PDU_SET_REQ)
+    else if (msg_ps->rt == SNMP_ASN1_PDU_SET_REQ)
     {
       snmp_msg_set_event(request_id, msg_ps);
     }
   }
 }
-
 
 /* lwIP UDP receive callback function */
 static void
@@ -794,7 +789,8 @@ snmp_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, struct ip_addr *addr, 
   /* suppress unused argument warning */
   LWIP_UNUSED_ARG(arg);
   /* peek in the UDP header (goto IP payload) */
-  if(pbuf_header(p, UDP_HLEN)){
+  if (pbuf_header(p, UDP_HLEN))
+  {
     LWIP_ASSERT("Can't move to UDP header", 0);
     pbuf_free(p);
     return;
@@ -810,7 +806,7 @@ snmp_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, struct ip_addr *addr, 
     /* traverse input message process list, look for SNMP_MSG_EMPTY */
     msg_ps = &msg_input_list[0];
     req_idx = 0;
-    while ((req_idx<SNMP_CONCURRENT_REQUESTS) && (msg_ps->state != SNMP_MSG_EMPTY))
+    while ((req_idx < SNMP_CONCURRENT_REQUESTS) && (msg_ps->state != SNMP_MSG_EMPTY))
     {
       req_idx++;
       msg_ps++;
@@ -842,7 +838,7 @@ snmp_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, struct ip_addr *addr, 
            (msg_ps->rt == SNMP_ASN1_PDU_GET_NEXT_REQ) ||
            (msg_ps->rt == SNMP_ASN1_PDU_SET_REQ)) &&
           ((msg_ps->error_status == SNMP_ES_NOERROR) &&
-           (msg_ps->error_index == 0)) )
+           (msg_ps->error_index == 0)))
       {
         /* Only accept requests and requests without error (be robust) */
         err_ret = err_ret;
@@ -871,7 +867,7 @@ snmp_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, struct ip_addr *addr, 
           /* first variable binding from list to inspect */
           msg_ps->vb_idx = 0;
 
-          LWIP_DEBUGF(SNMP_MSG_DEBUG, ("snmp_recv varbind cnt=%"U16_F"\n",(u16_t)msg_ps->invb.count));
+          LWIP_DEBUGF(SNMP_MSG_DEBUG, ("snmp_recv varbind cnt=%" U16_F "\n", (u16_t)msg_ps->invb.count));
 
           /* handle input event and as much objects as possible in one go */
           snmp_msg_event(req_idx);
@@ -923,13 +919,13 @@ snmp_pdu_header_check(struct pbuf *p, u16_t ofs, u16_t pdu_len, u16_t *ofs_ret, 
 {
   err_t derr;
   u16_t len, ofs_base;
-  u8_t  len_octets;
-  u8_t  type;
+  u8_t len_octets;
+  u8_t type;
   s32_t version;
 
   ofs_base = ofs;
   snmp_asn1_dec_type(p, ofs, &type);
-  derr = snmp_asn1_dec_length(p, ofs+1, &len_octets, &len);
+  derr = snmp_asn1_dec_length(p, ofs + 1, &len_octets, &len);
   if ((derr != ERR_OK) ||
       (pdu_len != (1 + len_octets + len)) ||
       (type != (SNMP_ASN1_UNIV | SNMP_ASN1_CONSTR | SNMP_ASN1_SEQ)))
@@ -939,7 +935,7 @@ snmp_pdu_header_check(struct pbuf *p, u16_t ofs, u16_t pdu_len, u16_t *ofs_ret, 
   }
   ofs += (1 + len_octets);
   snmp_asn1_dec_type(p, ofs, &type);
-  derr = snmp_asn1_dec_length(p, ofs+1, &len_octets, &len);
+  derr = snmp_asn1_dec_length(p, ofs + 1, &len_octets, &len);
   if ((derr != ERR_OK) || (type != (SNMP_ASN1_UNIV | SNMP_ASN1_PRIMIT | SNMP_ASN1_INTEG)))
   {
     /* can't decode or no integer (version) */
@@ -961,7 +957,7 @@ snmp_pdu_header_check(struct pbuf *p, u16_t ofs, u16_t pdu_len, u16_t *ofs_ret, 
   }
   ofs += (1 + len_octets + len);
   snmp_asn1_dec_type(p, ofs, &type);
-  derr = snmp_asn1_dec_length(p, ofs+1, &len_octets, &len);
+  derr = snmp_asn1_dec_length(p, ofs + 1, &len_octets, &len);
   if ((derr != ERR_OK) || (type != (SNMP_ASN1_UNIV | SNMP_ASN1_PRIMIT | SNMP_ASN1_OC_STR)))
   {
     /* can't decode or no octet string (community) */
@@ -975,10 +971,10 @@ snmp_pdu_header_check(struct pbuf *p, u16_t ofs, u16_t pdu_len, u16_t *ofs_ret, 
     return ERR_ARG;
   }
   /* add zero terminator */
-  len = ((len < (SNMP_COMMUNITY_STR_LEN))?(len):(SNMP_COMMUNITY_STR_LEN));
+  len = ((len < (SNMP_COMMUNITY_STR_LEN)) ? (len) : (SNMP_COMMUNITY_STR_LEN));
   m_stat->community[len] = 0;
   m_stat->com_strlen = len;
-  if (strncmp(snmp_publiccommunity, (const char*)m_stat->community, SNMP_COMMUNITY_STR_LEN) != 0)
+  if (strncmp(snmp_publiccommunity, (const char *)m_stat->community, SNMP_COMMUNITY_STR_LEN) != 0)
   {
     /** @todo: move this if we need to check more names */
     snmp_inc_snmpinbadcommunitynames();
@@ -987,43 +983,43 @@ snmp_pdu_header_check(struct pbuf *p, u16_t ofs, u16_t pdu_len, u16_t *ofs_ret, 
   }
   ofs += (1 + len_octets + len);
   snmp_asn1_dec_type(p, ofs, &type);
-  derr = snmp_asn1_dec_length(p, ofs+1, &len_octets, &len);
+  derr = snmp_asn1_dec_length(p, ofs + 1, &len_octets, &len);
   if (derr != ERR_OK)
   {
     snmp_inc_snmpinasnparseerrs();
     return ERR_ARG;
   }
-  switch(type)
+  switch (type)
   {
-    case (SNMP_ASN1_CONTXT | SNMP_ASN1_CONSTR | SNMP_ASN1_PDU_GET_REQ):
-      /* GetRequest PDU */
-      snmp_inc_snmpingetrequests();
-      derr = ERR_OK;
-      break;
-    case (SNMP_ASN1_CONTXT | SNMP_ASN1_CONSTR | SNMP_ASN1_PDU_GET_NEXT_REQ):
-      /* GetNextRequest PDU */
-      snmp_inc_snmpingetnexts();
-      derr = ERR_OK;
-      break;
-    case (SNMP_ASN1_CONTXT | SNMP_ASN1_CONSTR | SNMP_ASN1_PDU_GET_RESP):
-      /* GetResponse PDU */
-      snmp_inc_snmpingetresponses();
-      derr = ERR_ARG;
-      break;
-    case (SNMP_ASN1_CONTXT | SNMP_ASN1_CONSTR | SNMP_ASN1_PDU_SET_REQ):
-      /* SetRequest PDU */
-      snmp_inc_snmpinsetrequests();
-      derr = ERR_OK;
-      break;
-    case (SNMP_ASN1_CONTXT | SNMP_ASN1_CONSTR | SNMP_ASN1_PDU_TRAP):
-      /* Trap PDU */
-      snmp_inc_snmpintraps();
-      derr = ERR_ARG;
-      break;
-    default:
-      snmp_inc_snmpinasnparseerrs();
-      derr = ERR_ARG;
-      break;
+  case (SNMP_ASN1_CONTXT | SNMP_ASN1_CONSTR | SNMP_ASN1_PDU_GET_REQ):
+    /* GetRequest PDU */
+    snmp_inc_snmpingetrequests();
+    derr = ERR_OK;
+    break;
+  case (SNMP_ASN1_CONTXT | SNMP_ASN1_CONSTR | SNMP_ASN1_PDU_GET_NEXT_REQ):
+    /* GetNextRequest PDU */
+    snmp_inc_snmpingetnexts();
+    derr = ERR_OK;
+    break;
+  case (SNMP_ASN1_CONTXT | SNMP_ASN1_CONSTR | SNMP_ASN1_PDU_GET_RESP):
+    /* GetResponse PDU */
+    snmp_inc_snmpingetresponses();
+    derr = ERR_ARG;
+    break;
+  case (SNMP_ASN1_CONTXT | SNMP_ASN1_CONSTR | SNMP_ASN1_PDU_SET_REQ):
+    /* SetRequest PDU */
+    snmp_inc_snmpinsetrequests();
+    derr = ERR_OK;
+    break;
+  case (SNMP_ASN1_CONTXT | SNMP_ASN1_CONSTR | SNMP_ASN1_PDU_TRAP):
+    /* Trap PDU */
+    snmp_inc_snmpintraps();
+    derr = ERR_ARG;
+    break;
+  default:
+    snmp_inc_snmpinasnparseerrs();
+    derr = ERR_ARG;
+    break;
   }
   if (derr != ERR_OK)
   {
@@ -1039,7 +1035,7 @@ snmp_pdu_header_check(struct pbuf *p, u16_t ofs, u16_t pdu_len, u16_t *ofs_ret, 
     return ERR_ARG;
   }
   snmp_asn1_dec_type(p, ofs, &type);
-  derr = snmp_asn1_dec_length(p, ofs+1, &len_octets, &len);
+  derr = snmp_asn1_dec_length(p, ofs + 1, &len_octets, &len);
   if ((derr != ERR_OK) || (type != (SNMP_ASN1_UNIV | SNMP_ASN1_PRIMIT | SNMP_ASN1_INTEG)))
   {
     /* can't decode or no integer (request ID) */
@@ -1055,7 +1051,7 @@ snmp_pdu_header_check(struct pbuf *p, u16_t ofs, u16_t pdu_len, u16_t *ofs_ret, 
   }
   ofs += (1 + len_octets + len);
   snmp_asn1_dec_type(p, ofs, &type);
-  derr = snmp_asn1_dec_length(p, ofs+1, &len_octets, &len);
+  derr = snmp_asn1_dec_length(p, ofs + 1, &len_octets, &len);
   if ((derr != ERR_OK) || (type != (SNMP_ASN1_UNIV | SNMP_ASN1_PRIMIT | SNMP_ASN1_INTEG)))
   {
     /* can't decode or no integer (error-status) */
@@ -1073,25 +1069,25 @@ snmp_pdu_header_check(struct pbuf *p, u16_t ofs, u16_t pdu_len, u16_t *ofs_ret, 
   }
   switch (m_stat->error_status)
   {
-    case SNMP_ES_TOOBIG:
-      snmp_inc_snmpintoobigs();
-      break;
-    case SNMP_ES_NOSUCHNAME:
-      snmp_inc_snmpinnosuchnames();
-      break;
-    case SNMP_ES_BADVALUE:
-      snmp_inc_snmpinbadvalues();
-      break;
-    case SNMP_ES_READONLY:
-      snmp_inc_snmpinreadonlys();
-      break;
-    case SNMP_ES_GENERROR:
-      snmp_inc_snmpingenerrs();
-      break;
+  case SNMP_ES_TOOBIG:
+    snmp_inc_snmpintoobigs();
+    break;
+  case SNMP_ES_NOSUCHNAME:
+    snmp_inc_snmpinnosuchnames();
+    break;
+  case SNMP_ES_BADVALUE:
+    snmp_inc_snmpinbadvalues();
+    break;
+  case SNMP_ES_READONLY:
+    snmp_inc_snmpinreadonlys();
+    break;
+  case SNMP_ES_GENERROR:
+    snmp_inc_snmpingenerrs();
+    break;
   }
   ofs += (1 + len_octets + len);
   snmp_asn1_dec_type(p, ofs, &type);
-  derr = snmp_asn1_dec_length(p, ofs+1, &len_octets, &len);
+  derr = snmp_asn1_dec_length(p, ofs + 1, &len_octets, &len);
   if ((derr != ERR_OK) || (type != (SNMP_ASN1_UNIV | SNMP_ASN1_PRIMIT | SNMP_ASN1_INTEG)))
   {
     /* can't decode or no integer (error-index) */
@@ -1117,12 +1113,12 @@ snmp_pdu_dec_varbindlist(struct pbuf *p, u16_t ofs, u16_t *ofs_ret, struct snmp_
 {
   err_t derr;
   u16_t len, vb_len;
-  u8_t  len_octets;
+  u8_t len_octets;
   u8_t type;
 
   /* variable binding list */
   snmp_asn1_dec_type(p, ofs, &type);
-  derr = snmp_asn1_dec_length(p, ofs+1, &len_octets, &vb_len);
+  derr = snmp_asn1_dec_length(p, ofs + 1, &len_octets, &vb_len);
   if ((derr != ERR_OK) ||
       (type != (SNMP_ASN1_UNIV | SNMP_ASN1_CONSTR | SNMP_ASN1_SEQ)))
   {
@@ -1142,7 +1138,7 @@ snmp_pdu_dec_varbindlist(struct pbuf *p, u16_t ofs, u16_t *ofs_ret, struct snmp_
     struct snmp_varbind *vb;
 
     snmp_asn1_dec_type(p, ofs, &type);
-    derr = snmp_asn1_dec_length(p, ofs+1, &len_octets, &len);
+    derr = snmp_asn1_dec_length(p, ofs + 1, &len_octets, &len);
     if ((derr != ERR_OK) ||
         (type != (SNMP_ASN1_UNIV | SNMP_ASN1_CONSTR | SNMP_ASN1_SEQ)) ||
         (len == 0) || (len > vb_len))
@@ -1156,7 +1152,7 @@ snmp_pdu_dec_varbindlist(struct pbuf *p, u16_t ofs, u16_t *ofs_ret, struct snmp_
     vb_len -= (1 + len_octets);
 
     snmp_asn1_dec_type(p, ofs, &type);
-    derr = snmp_asn1_dec_length(p, ofs+1, &len_octets, &len);
+    derr = snmp_asn1_dec_length(p, ofs + 1, &len_octets, &len);
     if ((derr != ERR_OK) || (type != (SNMP_ASN1_UNIV | SNMP_ASN1_PRIMIT | SNMP_ASN1_OBJ_ID)))
     {
       /* can't decode object name length */
@@ -1178,7 +1174,7 @@ snmp_pdu_dec_varbindlist(struct pbuf *p, u16_t ofs, u16_t *ofs_ret, struct snmp_
     vb_len -= (1 + len_octets + len);
 
     snmp_asn1_dec_type(p, ofs, &type);
-    derr = snmp_asn1_dec_length(p, ofs+1, &len_octets, &len);
+    derr = snmp_asn1_dec_length(p, ofs + 1, &len_octets, &len);
     if (derr != ERR_OK)
     {
       /* can't decode object value length */
@@ -1190,39 +1186,90 @@ snmp_pdu_dec_varbindlist(struct pbuf *p, u16_t ofs, u16_t *ofs_ret, struct snmp_
 
     switch (type)
     {
-      case (SNMP_ASN1_UNIV | SNMP_ASN1_PRIMIT | SNMP_ASN1_INTEG):
-        vb = snmp_varbind_alloc(&oid, type, sizeof(s32_t));
+    case (SNMP_ASN1_UNIV | SNMP_ASN1_PRIMIT | SNMP_ASN1_INTEG):
+      vb = snmp_varbind_alloc(&oid, type, sizeof(s32_t));
+      if (vb != NULL)
+      {
+        s32_t *vptr = vb->value;
+
+        derr = snmp_asn1_dec_s32t(p, ofs + 1 + len_octets, len, vptr);
+        snmp_varbind_tail_add(&m_stat->invb, vb);
+      }
+      else
+      {
+        derr = ERR_ARG;
+      }
+      break;
+    case (SNMP_ASN1_APPLIC | SNMP_ASN1_PRIMIT | SNMP_ASN1_COUNTER):
+    case (SNMP_ASN1_APPLIC | SNMP_ASN1_PRIMIT | SNMP_ASN1_GAUGE):
+    case (SNMP_ASN1_APPLIC | SNMP_ASN1_PRIMIT | SNMP_ASN1_TIMETICKS):
+      vb = snmp_varbind_alloc(&oid, type, sizeof(u32_t));
+      if (vb != NULL)
+      {
+        u32_t *vptr = vb->value;
+
+        derr = snmp_asn1_dec_u32t(p, ofs + 1 + len_octets, len, vptr);
+        snmp_varbind_tail_add(&m_stat->invb, vb);
+      }
+      else
+      {
+        derr = ERR_ARG;
+      }
+      break;
+    case (SNMP_ASN1_UNIV | SNMP_ASN1_PRIMIT | SNMP_ASN1_OC_STR):
+    case (SNMP_ASN1_APPLIC | SNMP_ASN1_PRIMIT | SNMP_ASN1_OPAQUE):
+      vb = snmp_varbind_alloc(&oid, type, len);
+      if (vb != NULL)
+      {
+        derr = snmp_asn1_dec_raw(p, ofs + 1 + len_octets, len, vb->value_len, vb->value);
+        snmp_varbind_tail_add(&m_stat->invb, vb);
+      }
+      else
+      {
+        derr = ERR_ARG;
+      }
+      break;
+    case (SNMP_ASN1_UNIV | SNMP_ASN1_PRIMIT | SNMP_ASN1_NUL):
+      vb = snmp_varbind_alloc(&oid, type, 0);
+      if (vb != NULL)
+      {
+        snmp_varbind_tail_add(&m_stat->invb, vb);
+        derr = ERR_OK;
+      }
+      else
+      {
+        derr = ERR_ARG;
+      }
+      break;
+    case (SNMP_ASN1_UNIV | SNMP_ASN1_PRIMIT | SNMP_ASN1_OBJ_ID):
+      derr = snmp_asn1_dec_oid(p, ofs + 1 + len_octets, len, &oid_value);
+      if (derr == ERR_OK)
+      {
+        vb = snmp_varbind_alloc(&oid, type, oid_value.len * sizeof(s32_t));
         if (vb != NULL)
         {
+          u8_t i = oid_value.len;
           s32_t *vptr = vb->value;
 
-          derr = snmp_asn1_dec_s32t(p, ofs + 1 + len_octets, len, vptr);
+          while (i > 0)
+          {
+            i--;
+            vptr[i] = oid_value.id[i];
+          }
           snmp_varbind_tail_add(&m_stat->invb, vb);
+          derr = ERR_OK;
         }
         else
         {
           derr = ERR_ARG;
         }
-        break;
-      case (SNMP_ASN1_APPLIC | SNMP_ASN1_PRIMIT | SNMP_ASN1_COUNTER):
-      case (SNMP_ASN1_APPLIC | SNMP_ASN1_PRIMIT | SNMP_ASN1_GAUGE):
-      case (SNMP_ASN1_APPLIC | SNMP_ASN1_PRIMIT | SNMP_ASN1_TIMETICKS):
-        vb = snmp_varbind_alloc(&oid, type, sizeof(u32_t));
-        if (vb != NULL)
-        {
-          u32_t *vptr = vb->value;
-
-          derr = snmp_asn1_dec_u32t(p, ofs + 1 + len_octets, len, vptr);
-          snmp_varbind_tail_add(&m_stat->invb, vb);
-        }
-        else
-        {
-          derr = ERR_ARG;
-        }
-        break;
-      case (SNMP_ASN1_UNIV | SNMP_ASN1_PRIMIT | SNMP_ASN1_OC_STR):
-      case (SNMP_ASN1_APPLIC | SNMP_ASN1_PRIMIT | SNMP_ASN1_OPAQUE):
-        vb = snmp_varbind_alloc(&oid, type, len);
+      }
+      break;
+    case (SNMP_ASN1_APPLIC | SNMP_ASN1_PRIMIT | SNMP_ASN1_IPADDR):
+      if (len == 4)
+      {
+        /* must be exactly 4 octets! */
+        vb = snmp_varbind_alloc(&oid, type, 4);
         if (vb != NULL)
         {
           derr = snmp_asn1_dec_raw(p, ofs + 1 + len_octets, len, vb->value_len, vb->value);
@@ -1232,66 +1279,15 @@ snmp_pdu_dec_varbindlist(struct pbuf *p, u16_t ofs, u16_t *ofs_ret, struct snmp_
         {
           derr = ERR_ARG;
         }
-        break;
-      case (SNMP_ASN1_UNIV | SNMP_ASN1_PRIMIT | SNMP_ASN1_NUL):
-        vb = snmp_varbind_alloc(&oid, type, 0);
-        if (vb != NULL)
-        {
-          snmp_varbind_tail_add(&m_stat->invb, vb);
-          derr = ERR_OK;
-        }
-        else
-        {
-          derr = ERR_ARG;
-        }
-        break;
-      case (SNMP_ASN1_UNIV | SNMP_ASN1_PRIMIT | SNMP_ASN1_OBJ_ID):
-        derr = snmp_asn1_dec_oid(p, ofs + 1 + len_octets, len, &oid_value);
-        if (derr == ERR_OK)
-        {
-          vb = snmp_varbind_alloc(&oid, type, oid_value.len * sizeof(s32_t));
-          if (vb != NULL)
-          {
-            u8_t i = oid_value.len;
-            s32_t *vptr = vb->value;
-
-            while(i > 0)
-            {
-              i--;
-              vptr[i] = oid_value.id[i];
-            }
-            snmp_varbind_tail_add(&m_stat->invb, vb);
-            derr = ERR_OK;
-          }
-          else
-          {
-            derr = ERR_ARG;
-          }
-        }
-        break;
-      case (SNMP_ASN1_APPLIC | SNMP_ASN1_PRIMIT | SNMP_ASN1_IPADDR):
-        if (len == 4)
-        {
-          /* must be exactly 4 octets! */
-          vb = snmp_varbind_alloc(&oid, type, 4);
-          if (vb != NULL)
-          {
-            derr = snmp_asn1_dec_raw(p, ofs + 1 + len_octets, len, vb->value_len, vb->value);
-            snmp_varbind_tail_add(&m_stat->invb, vb);
-          }
-          else
-          {
-            derr = ERR_ARG;
-          }
-        }
-        else
-        {
-          derr = ERR_ARG;
-        }
-        break;
-      default:
+      }
+      else
+      {
         derr = ERR_ARG;
-        break;
+      }
+      break;
+    default:
+      derr = ERR_ARG;
+      break;
     }
     if (derr != ERR_OK)
     {
@@ -1317,13 +1313,13 @@ snmp_pdu_dec_varbindlist(struct pbuf *p, u16_t ofs, u16_t *ofs_ret, struct snmp_
   return ERR_OK;
 }
 
-struct snmp_varbind*
+struct snmp_varbind *
 snmp_varbind_alloc(struct snmp_obj_id *oid, u8_t type, u8_t len)
 {
   struct snmp_varbind *vb;
 
   vb = (struct snmp_varbind *)mem_malloc(sizeof(struct snmp_varbind));
-  LWIP_ASSERT("vb != NULL",vb != NULL);
+  LWIP_ASSERT("vb != NULL", vb != NULL);
   if (vb != NULL)
   {
     u8_t i;
@@ -1335,14 +1331,14 @@ snmp_varbind_alloc(struct snmp_obj_id *oid, u8_t type, u8_t len)
     if (i > 0)
     {
       /* allocate array of s32_t for our object identifier */
-      vb->ident = (s32_t*)mem_malloc(sizeof(s32_t) * i);
-      LWIP_ASSERT("vb->ident != NULL",vb->ident != NULL);
+      vb->ident = (s32_t *)mem_malloc(sizeof(s32_t) * i);
+      LWIP_ASSERT("vb->ident != NULL", vb->ident != NULL);
       if (vb->ident == NULL)
       {
         mem_free(vb);
         return NULL;
       }
-      while(i > 0)
+      while (i > 0)
       {
         i--;
         vb->ident[i] = oid->id[i];
@@ -1359,7 +1355,7 @@ snmp_varbind_alloc(struct snmp_obj_id *oid, u8_t type, u8_t len)
     {
       /* allocate raw bytes for our object value */
       vb->value = mem_malloc(len);
-      LWIP_ASSERT("vb->value != NULL",vb->value != NULL);
+      LWIP_ASSERT("vb->value != NULL", vb->value != NULL);
       if (vb->value == NULL)
       {
         if (vb->ident != NULL)
@@ -1379,27 +1375,25 @@ snmp_varbind_alloc(struct snmp_obj_id *oid, u8_t type, u8_t len)
   return vb;
 }
 
-void
-snmp_varbind_free(struct snmp_varbind *vb)
+void snmp_varbind_free(struct snmp_varbind *vb)
 {
-  if (vb->value != NULL )
+  if (vb->value != NULL)
   {
     mem_free(vb->value);
   }
-  if (vb->ident != NULL )
+  if (vb->ident != NULL)
   {
     mem_free(vb->ident);
   }
   mem_free(vb);
 }
 
-void
-snmp_varbind_list_free(struct snmp_varbind_root *root)
+void snmp_varbind_list_free(struct snmp_varbind_root *root)
 {
   struct snmp_varbind *vb, *prev;
 
   vb = root->tail;
-  while ( vb != NULL )
+  while (vb != NULL)
   {
     prev = vb->prev;
     snmp_varbind_free(vb);
@@ -1410,8 +1404,7 @@ snmp_varbind_list_free(struct snmp_varbind_root *root)
   root->tail = NULL;
 }
 
-void
-snmp_varbind_tail_add(struct snmp_varbind_root *root, struct snmp_varbind *vb)
+void snmp_varbind_tail_add(struct snmp_varbind_root *root, struct snmp_varbind *vb)
 {
   if (root->count == 0)
   {
@@ -1429,10 +1422,10 @@ snmp_varbind_tail_add(struct snmp_varbind_root *root, struct snmp_varbind *vb)
   root->count += 1;
 }
 
-struct snmp_varbind*
+struct snmp_varbind *
 snmp_varbind_tail_remove(struct snmp_varbind_root *root)
 {
-  struct snmp_varbind* vb;
+  struct snmp_varbind *vb;
 
   if (root->count > 0)
   {

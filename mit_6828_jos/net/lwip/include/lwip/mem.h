@@ -35,14 +35,15 @@
 #include "lwip/opt.h"
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 #if MEM_LIBC_MALLOC
 
 #include <stddef.h> /* for size_t */
 
-typedef size_t mem_size_t;
+    typedef size_t mem_size_t;
 
 /* aliases for C library malloc() */
 #define mem_init()
@@ -78,22 +79,22 @@ typedef u16_t mem_size_t;
 /** mem_realloc is not used when using pools instead of a heap:
     we can't free part of a pool element and don't want to copy the rest */
 #define mem_realloc(mem, size) (mem)
-#else /* MEM_USE_POOLS */
+#else  /* MEM_USE_POOLS */
 /* lwIP alternative malloc */
-void  mem_init(void);
+void mem_init(void);
 void *mem_realloc(void *mem, mem_size_t size);
 #endif /* MEM_USE_POOLS */
 void *mem_malloc(mem_size_t size);
 void *mem_calloc(mem_size_t count, mem_size_t size);
-void  mem_free(void *mem);
+void mem_free(void *mem);
 #endif /* MEM_LIBC_MALLOC */
 
 #ifndef LWIP_MEM_ALIGN_SIZE
-#define LWIP_MEM_ALIGN_SIZE(size) (((size) + MEM_ALIGNMENT - 1) & ~(MEM_ALIGNMENT-1))
+#define LWIP_MEM_ALIGN_SIZE(size) (((size) + MEM_ALIGNMENT - 1) & ~(MEM_ALIGNMENT - 1))
 #endif
 
 #ifndef LWIP_MEM_ALIGN
-#define LWIP_MEM_ALIGN(addr) ((void *)(((mem_ptr_t)(addr) + MEM_ALIGNMENT - 1) & ~(mem_ptr_t)(MEM_ALIGNMENT-1)))
+#define LWIP_MEM_ALIGN(addr) ((void *)(((mem_ptr_t)(addr) + MEM_ALIGNMENT - 1) & ~(mem_ptr_t)(MEM_ALIGNMENT - 1)))
 #endif
 
 #ifdef __cplusplus

@@ -127,7 +127,7 @@ low_level_output(struct netif *netif, struct pbuf *p)
   struct pbuf *q;
 
   initiate transfer();
-  
+
 #if ETH_PAD_SIZE
   pbuf_header(p, -ETH_PAD_SIZE); /* drop the padding word */
 #endif

@@ -5,7 +5,7 @@
 #define debug 0
 
 // Virtual address at which to receive page mappings containing client requests.
-#define REQVA		0x0ffff000
+#define REQVA 0x0ffff000
 union Nsipc nsipcbuf __attribute__((aligned(PGSIZE)));
 
 // Send an IP request to the network server, and wait for a reply.
@@ -25,18 +25,18 @@ nsipc(unsigned type)
 	if (debug)
 		cprintf("[%08x] nsipc %d\n", thisenv->env_id, type);
 
-	ipc_send(nsenv, type, &nsipcbuf, PTE_P|PTE_W|PTE_U);
+	ipc_send(nsenv, type, &nsipcbuf, PTE_P | PTE_W | PTE_U);
 	return ipc_recv(NULL, NULL, NULL);
 }
 
-int
-nsipc_accept(int s, struct sockaddr *addr, socklen_t *addrlen)
+int nsipc_accept(int s, struct sockaddr *addr, socklen_t *addrlen)
 {
 	int r;
 
 	nsipcbuf.accept.req_s = s;
 	nsipcbuf.accept.req_addrlen = *addrlen;
-	if ((r = nsipc(NSREQ_ACCEPT)) >= 0) {
+	if ((r = nsipc(NSREQ_ACCEPT)) >= 0)
+	{
 		struct Nsret_accept *ret = &nsipcbuf.acceptRet;
 		memmove(addr, &ret->ret_addr, ret->ret_addrlen);
 		*addrlen = ret->ret_addrlen;
@@ -44,8 +44,7 @@ nsipc_accept(int s, struct sockaddr *addr, socklen_t *addrlen)
 	return r;
 }
 
-int
-nsipc_bind(int s, struct sockaddr *name, socklen_t namelen)
+int nsipc_bind(int s, struct sockaddr *name, socklen_t namelen)
 {
 	nsipcbuf.bind.req_s = s;
 	memmove(&nsipcbuf.bind.req_name, name, namelen);
@@ -53,23 +52,20 @@ nsipc_bind(int s, struct sockaddr *name, socklen_t namelen)
 	return nsipc(NSREQ_BIND);
 }
 
-int
-nsipc_shutdown(int s, int how)
+int nsipc_shutdown(int s, int how)
 {
 	nsipcbuf.shutdown.req_s = s;
 	nsipcbuf.shutdown.req_how = how;
 	return nsipc(NSREQ_SHUTDOWN);
 }
 
-int
-nsipc_close(int s)
+int nsipc_close(int s)
 {
 	nsipcbuf.close.req_s = s;
 	return nsipc(NSREQ_CLOSE);
 }
 
-int
-nsipc_connect(int s, const struct sockaddr *name, socklen_t namelen)
+int nsipc_connect(int s, const struct sockaddr *name, socklen_t namelen)
 {
 	nsipcbuf.connect.req_s = s;
 	memmove(&nsipcbuf.connect.req_name, name, namelen);
@@ -77,16 +73,14 @@ nsipc_connect(int s, const struct sockaddr *name, socklen_t namelen)
 	return nsipc(NSREQ_CONNECT);
 }
 
-int
-nsipc_listen(int s, int backlog)
+int nsipc_listen(int s, int backlog)
 {
 	nsipcbuf.listen.req_s = s;
 	nsipcbuf.listen.req_backlog = backlog;
 	return nsipc(NSREQ_LISTEN);
 }
 
-int
-nsipc_recv(int s, void *mem, int len, unsigned int flags)
+int nsipc_recv(int s, void *mem, int len, unsigned int flags)
 {
 	int r;
 
@@ -94,7 +88,8 @@ nsipc_recv(int s, void *mem, int len, unsigned int flags)
 	nsipcbuf.recv.req_len = len;
 	nsipcbuf.recv.req_flags = flags;
 
-	if ((r = nsipc(NSREQ_RECV)) >= 0) {
+	if ((r = nsipc(NSREQ_RECV)) >= 0)
+	{
 		assert(r < 1600 && r <= len);
 		memmove(mem, nsipcbuf.recvRet.ret_buf, r);
 	}
@@ -102,8 +97,7 @@ nsipc_recv(int s, void *mem, int len, unsigned int flags)
 	return r;
 }
 
-int
-nsipc_send(int s, const void *buf, int size, unsigned int flags)
+int nsipc_send(int s, const void *buf, int size, unsigned int flags)
 {
 	nsipcbuf.send.req_s = s;
 	assert(size < 1600);
@@ -113,8 +107,7 @@ nsipc_send(int s, const void *buf, int size, unsigned int flags)
 	return nsipc(NSREQ_SEND);
 }
 
-int
-nsipc_socket(int domain, int type, int protocol)
+int nsipc_socket(int domain, int type, int protocol)
 {
 	nsipcbuf.socket.req_domain = domain;
 	nsipcbuf.socket.req_type = type;

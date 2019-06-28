@@ -2,8 +2,7 @@
 
 char *msg = "Now is the time for all good men to come to the aid of their party.";
 
-void
-umain(int argc, char **argv)
+void umain(int argc, char **argv)
 {
 	char buf[100];
 	int i, pid, p[2];
@@ -16,11 +15,12 @@ umain(int argc, char **argv)
 	if ((pid = fork()) < 0)
 		panic("fork: %e", i);
 
-	if (pid == 0) {
+	if (pid == 0)
+	{
 		cprintf("[%08x] pipereadeof close %d\n", thisenv->env_id, p[1]);
 		close(p[1]);
 		cprintf("[%08x] pipereadeof readn %d\n", thisenv->env_id, p[0]);
-		i = readn(p[0], buf, sizeof buf-1);
+		i = readn(p[0], buf, sizeof buf - 1);
 		if (i < 0)
 			panic("read: %e", i);
 		buf[i] = 0;
@@ -29,7 +29,9 @@ umain(int argc, char **argv)
 		else
 			cprintf("\ngot %d bytes: %s\n", i, buf);
 		exit();
-	} else {
+	}
+	else
+	{
 		cprintf("[%08x] pipereadeof close %d\n", thisenv->env_id, p[0]);
 		close(p[0]);
 		cprintf("[%08x] pipereadeof write %d\n", thisenv->env_id, p[1]);
@@ -46,9 +48,11 @@ umain(int argc, char **argv)
 	if ((pid = fork()) < 0)
 		panic("fork: %e", i);
 
-	if (pid == 0) {
+	if (pid == 0)
+	{
 		close(p[0]);
-		while (1) {
+		while (1)
+		{
 			cprintf(".");
 			if (write(p[1], "x", 1) != 1)
 				break;

@@ -77,5 +77,4 @@ void avGenRand(char *buf, u32_t bufLen);
  */
 u32_t avRandom(void);
 
-
 #endif /* RANDM_H */

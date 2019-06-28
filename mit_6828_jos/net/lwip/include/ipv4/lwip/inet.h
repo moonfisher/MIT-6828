@@ -37,17 +37,19 @@
 #include "lwip/ip_addr.h"
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-/* For compatibility with BSD code */
-struct in_addr {
-  u32_t s_addr;
-};
+  /* For compatibility with BSD code */
+  struct in_addr
+  {
+    u32_t s_addr;
+  };
 
-u32_t inet_addr(const char *cp);
-int inet_aton(const char *cp, struct in_addr *addr);
-char *inet_ntoa(struct in_addr addr); /* returns ptr to static buffer; not reentrant! */
+  u32_t inet_addr(const char *cp);
+  int inet_aton(const char *cp, struct in_addr *addr);
+  char *inet_ntoa(struct in_addr addr); /* returns ptr to static buffer; not reentrant! */
 
 #ifdef htons
 #undef htons
@@ -84,7 +86,7 @@ char *inet_ntoa(struct in_addr addr); /* returns ptr to static buffer; not reent
 #define ntohs(x) LWIP_PLATFORM_HTONS(x)
 #define htonl(x) LWIP_PLATFORM_HTONL(x)
 #define ntohl(x) LWIP_PLATFORM_HTONL(x)
-#else /* LWIP_PLATFORM_BYTESWAP */
+#else  /* LWIP_PLATFORM_BYTESWAP */
 u16_t htons(u16_t x);
 u16_t ntohs(u16_t x);
 u32_t htonl(u32_t x);

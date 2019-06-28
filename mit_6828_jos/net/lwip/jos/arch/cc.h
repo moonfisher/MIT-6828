@@ -18,21 +18,21 @@ typedef int8_t s8_t;
 
 typedef uintptr_t mem_ptr_t;
 
-#define PACK_STRUCT_FIELD(x)	x
+#define PACK_STRUCT_FIELD(x) x
 #define PACK_STRUCT_STRUCT
 #define PACK_STRUCT_BEGIN
 #define PACK_STRUCT_END
 
-#define S16_F	"d"
-#define U16_F	"u"
-#define X16_F	"x"
+#define S16_F "d"
+#define U16_F "u"
+#define X16_F "x"
 
-#define S32_F	"d"
-#define U32_F	"u"
-#define X32_F	"x"
+#define S32_F "d"
+#define U32_F "u"
+#define X32_F "x"
 
-#define LWIP_PLATFORM_DIAG(x)	cprintf x
-#define LWIP_PLATFORM_ASSERT(x)	panic(x)
+#define LWIP_PLATFORM_DIAG(x) cprintf x
+#define LWIP_PLATFORM_ASSERT(x) panic(x)
 
 #ifndef BYTE_ORDER
 #define BYTE_ORDER LITTLE_ENDIAN

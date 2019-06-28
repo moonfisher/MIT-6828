@@ -3,8 +3,7 @@
 
 void wrong(int, int, int);
 
-void
-umain(int argc, char **argv)
+void umain(int argc, char **argv)
 {
 	char c1, c2;
 	int r, rfd, wfd, kfd, n1, n2, off, nloff;
@@ -12,8 +11,8 @@ umain(int argc, char **argv)
 
 	close(0);
 	close(1);
-	opencons();				//分配文件描述符0
-	opencons();				//分配文件描述符1
+	opencons(); //分配文件描述符0
+	opencons(); //分配文件描述符1
 
 	if ((rfd = open("testshell.sh", O_RDONLY)) < 0)
 		panic("open testshell.sh: %e", rfd);
@@ -24,7 +23,8 @@ umain(int argc, char **argv)
 	cprintf("running sh -x < testshell.sh | cat\n");
 	if ((r = fork()) < 0)
 		panic("fork: %e", r);
-	if (r == 0) {
+	if (r == 0)
+	{
 		dup(rfd, 0);
 		dup(wfd, 1);
 		close(rfd);
@@ -44,7 +44,8 @@ umain(int argc, char **argv)
 		panic("open testshell.key for reading: %e", kfd);
 
 	nloff = 0;
-	for (off=0;; off++) {
+	for (off = 0;; off++)
+	{
 		n1 = read(rfd, &c1, 1);
 		n2 = read(kfd, &c2, 1);
 		if (n1 < 0)
@@ -56,15 +57,14 @@ umain(int argc, char **argv)
 		if (n1 != 1 || n2 != 1 || c1 != c2)
 			wrong(rfd, kfd, nloff);
 		if (c1 == '\n')
-			nloff = off+1;
+			nloff = off + 1;
 	}
 	cprintf("shell ran correctly\n");
 
 	breakpoint();
 }
 
-void
-wrong(int rfd, int kfd, int off)
+void wrong(int rfd, int kfd, int off)
 {
 	char buf[100];
 	int n;
@@ -74,12 +74,11 @@ wrong(int rfd, int kfd, int off)
 
 	cprintf("shell produced incorrect output.\n");
 	cprintf("expected:\n===\n");
-	while ((n = read(kfd, buf, sizeof buf-1)) > 0)
+	while ((n = read(kfd, buf, sizeof buf - 1)) > 0)
 		sys_cputs(buf, n);
 	cprintf("===\ngot:\n===\n");
-	while ((n = read(rfd, buf, sizeof buf-1)) > 0)
+	while ((n = read(rfd, buf, sizeof buf - 1)) > 0)
 		sys_cputs(buf, n);
 	cprintf("===\n");
 	exit();
 }
-

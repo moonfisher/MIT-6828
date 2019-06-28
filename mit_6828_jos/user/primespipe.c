@@ -23,11 +23,12 @@ top:
 	cprintf("%d\n", p);
 
 	// fork a right neighbor to continue the chain
-	if ((i=pipe(pfd)) < 0)
+	if ((i = pipe(pfd)) < 0)
 		panic("pipe: %e", i);
 	if ((id = fork()) < 0)
 		panic("fork: %e", id);
-	if (id == 0) {
+	if (id == 0)
+	{
 		close(fd);
 		close(pfd[1]);
 		fd = pfd[0];
@@ -38,30 +39,31 @@ top:
 	wfd = pfd[1];
 
 	// filter out multiples of our prime
-	for (;;) {
-		if ((r=readn(fd, &i, 4)) != 4)
+	for (;;)
+	{
+		if ((r = readn(fd, &i, 4)) != 4)
 			panic("primeproc %d readn %d %d %e", p, fd, r, r >= 0 ? 0 : r);
-		if (i%p)
-			if ((r=write(wfd, &i, 4)) != 4)
+		if (i % p)
+			if ((r = write(wfd, &i, 4)) != 4)
 				panic("primeproc %d write: %d %e", p, r, r >= 0 ? 0 : r);
 	}
 }
 
-void
-umain(int argc, char **argv)
+void umain(int argc, char **argv)
 {
 	int i, id, p[2], r;
 
 	binaryname = "primespipe";
 
-	if ((i=pipe(p)) < 0)
+	if ((i = pipe(p)) < 0)
 		panic("pipe: %e", i);
 
 	// fork the first prime process in the chain
-	if ((id=fork()) < 0)
+	if ((id = fork()) < 0)
 		panic("fork: %e", id);
 
-	if (id == 0) {
+	if (id == 0)
+	{
 		close(p[1]);
 		primeproc(p[0]);
 	}
@@ -69,8 +71,7 @@ umain(int argc, char **argv)
 	close(p[0]);
 
 	// feed all the integers through
-	for (i=2;; i++)
-		if ((r=write(p[1], &i, 4)) != 4)
+	for (i = 2;; i++)
+		if ((r = write(p[1], &i, 4)) != 4)
 			panic("generator write: %d, %e", r, r >= 0 ? 0 : r);
 }
-

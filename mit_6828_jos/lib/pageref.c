@@ -1,7 +1,6 @@
 #include <inc/lib.h>
 
-int
-pageref(void *v)
+int pageref(void *v)
 {
 	pte_t pte;
 

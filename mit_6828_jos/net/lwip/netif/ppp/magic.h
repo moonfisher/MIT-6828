@@ -59,7 +59,7 @@
 *****************************************************************************/
 
 /* Initialize the magic number generator */
-void  magicInit(void);
+void magicInit(void);
 
 /* Returns the next magic number */
 u32_t magic(void);
