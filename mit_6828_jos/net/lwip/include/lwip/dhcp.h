@@ -23,8 +23,8 @@ extern "C"
 /** period (in milliseconds) of the application calling dhcp_fine_tmr() */
 #define DHCP_FINE_TIMER_MSECS 500
 
-  struct dhcp
-  {
+struct dhcp
+{
     /** current DHCP state machine state */
     u8_t state;
     /** retries of current request */
@@ -63,23 +63,23 @@ extern "C"
 #if LWIP_DHCP_AUTOIP_COOP
     u8_t autoip_coop_state;
 #endif
-/** Patch #1308
- *  TODO: See dhcp.c "TODO"s
- */
+    /** Patch #1308
+     *  TODO: See dhcp.c "TODO"s
+     */
 #if 0
-  struct ip_addr offered_si_addr;
-  u8_t *boot_file_name;
+    struct ip_addr offered_si_addr;
+    u8_t *boot_file_name;
 #endif
-  };
+};
 
 /* MUST be compiled with "pack structs" or equivalent! */
 #ifdef PACK_STRUCT_USE_INCLUDES
 #include "arch/bpstruct.h"
 #endif
-  PACK_STRUCT_BEGIN
-  /** minimum set of fields of any DHCP message */
-  struct dhcp_msg
-  {
+PACK_STRUCT_BEGIN
+/** minimum set of fields of any DHCP message */
+struct dhcp_msg
+{
     PACK_STRUCT_FIELD(u8_t op);
     PACK_STRUCT_FIELD(u8_t htype);
     PACK_STRUCT_FIELD(u8_t hlen);
@@ -99,42 +99,42 @@ extern "C"
     PACK_STRUCT_FIELD(u8_t file[DHCP_FILE_LEN]);
     PACK_STRUCT_FIELD(u32_t cookie);
 #define DHCP_MIN_OPTIONS_LEN 68U
-/** make sure user does not configure this too small */
+    /** make sure user does not configure this too small */
 #if ((defined(DHCP_OPTIONS_LEN)) && (DHCP_OPTIONS_LEN < DHCP_MIN_OPTIONS_LEN))
 #undef DHCP_OPTIONS_LEN
 #endif
-/** allow this to be configured in lwipopts.h, but not too small */
+    /** allow this to be configured in lwipopts.h, but not too small */
 #if (!defined(DHCP_OPTIONS_LEN))
-/** set this to be sufficient for your options in outgoing DHCP msgs */
+    /** set this to be sufficient for your options in outgoing DHCP msgs */
 #define DHCP_OPTIONS_LEN DHCP_MIN_OPTIONS_LEN
 #endif
     PACK_STRUCT_FIELD(u8_t options[DHCP_OPTIONS_LEN]);
-  } PACK_STRUCT_STRUCT;
-  PACK_STRUCT_END
+} PACK_STRUCT_STRUCT;
+PACK_STRUCT_END
 #ifdef PACK_STRUCT_USE_INCLUDES
 #include "arch/epstruct.h"
 #endif
 
-  /** start DHCP configuration */
-  err_t dhcp_start(struct netif *netif);
-  /** enforce early lease renewal (not needed normally)*/
-  err_t dhcp_renew(struct netif *netif);
-  /** release the DHCP lease, usually called before dhcp_stop()*/
-  err_t dhcp_release(struct netif *netif);
-  /** stop DHCP configuration */
-  void dhcp_stop(struct netif *netif);
-  /** inform server of our manual IP address */
-  void dhcp_inform(struct netif *netif);
+/** start DHCP configuration */
+err_t dhcp_start(struct netif *netif);
+/** enforce early lease renewal (not needed normally)*/
+err_t dhcp_renew(struct netif *netif);
+/** release the DHCP lease, usually called before dhcp_stop()*/
+err_t dhcp_release(struct netif *netif);
+/** stop DHCP configuration */
+void dhcp_stop(struct netif *netif);
+/** inform server of our manual IP address */
+void dhcp_inform(struct netif *netif);
 
 /** if enabled, check whether the offered IP address is not in use, using ARP */
 #if DHCP_DOES_ARP_CHECK
-  void dhcp_arp_reply(struct netif *netif, struct ip_addr *addr);
+void dhcp_arp_reply(struct netif *netif, struct ip_addr *addr);
 #endif
 
-  /** to be called every minute */
-  void dhcp_coarse_tmr(void);
-  /** to be called every half second */
-  void dhcp_fine_tmr(void);
+/** to be called every minute */
+void dhcp_coarse_tmr(void);
+/** to be called every half second */
+void dhcp_fine_tmr(void);
 
 /** DHCP message item offsets and length */
 #define DHCP_MSG_OFS (UDP_DATA_OFS)

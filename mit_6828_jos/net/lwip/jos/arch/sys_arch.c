@@ -17,7 +17,8 @@ struct sys_sem_entry
 {
     int freed;
     int gen;
-    union {
+    union
+    {
         uint32_t v;
         struct
         {
@@ -95,7 +96,7 @@ sys_mbox_new(int size)
     mbe->free_msg = sys_sem_new(MBOXSLOTS);
 
     if (mbe->queued_msg == SYS_SEM_NULL ||
-        mbe->free_msg == SYS_SEM_NULL)
+            mbe->free_msg == SYS_SEM_NULL)
     {
         sys_mbox_free(i);
         cprintf("lwip: sys_mbox_new: can't get semaphore\n");

@@ -9,8 +9,8 @@
 typedef _Bool bool;
 enum
 {
-	false,
-	true
+    false,
+    true
 };
 
 // Explicitly-sized versions of integer types

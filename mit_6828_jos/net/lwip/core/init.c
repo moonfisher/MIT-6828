@@ -6,9 +6,9 @@
 
 /*
  * Copyright (c) 2001-2004 Swedish Institute of Computer Science.
- * All rights reserved. 
- * 
- * Redistribution and use in source and binary forms, with or without modification, 
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
  *
  * 1. Redistributions of source code must retain the above copyright notice,
@@ -17,21 +17,21 @@
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
  * 3. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission. 
+ *    derived from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED 
- * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
- * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT 
- * SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT 
- * OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING 
- * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY 
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
+ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT
+ * SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
+ * OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+ * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
  * OF SUCH DAMAGE.
  *
  * This file is part of the lwIP TCP/IP stack.
- * 
+ *
  * Author: Adam Dunkels <adam@sics.se>
  *
  */
@@ -186,22 +186,22 @@
 static void
 lwip_sanity_check(void)
 {
-  /* Warnings */
+    /* Warnings */
 #if LWIP_NETCONN
-  if (MEMP_NUM_NETCONN > (MEMP_NUM_TCP_PCB + MEMP_NUM_TCP_PCB_LISTEN + MEMP_NUM_UDP_PCB + MEMP_NUM_RAW_PCB))
-    LWIP_PLATFORM_DIAG(("lwip_sanity_check: WARNING: MEMP_NUM_NETCONN should be less than the sum of MEMP_NUM_{TCP,RAW,UDP}_PCB+MEMP_NUM_TCP_PCB_LISTEN\n"));
+    if (MEMP_NUM_NETCONN > (MEMP_NUM_TCP_PCB + MEMP_NUM_TCP_PCB_LISTEN + MEMP_NUM_UDP_PCB + MEMP_NUM_RAW_PCB))
+        LWIP_PLATFORM_DIAG(("lwip_sanity_check: WARNING: MEMP_NUM_NETCONN should be less than the sum of MEMP_NUM_{TCP,RAW,UDP}_PCB+MEMP_NUM_TCP_PCB_LISTEN\n"));
 #endif /* LWIP_NETCONN */
 #if LWIP_TCP
-  if (MEMP_NUM_TCP_SEG < TCP_SND_QUEUELEN)
-    LWIP_PLATFORM_DIAG(("lwip_sanity_check: WARNING: MEMP_NUM_TCP_SEG should be at least as big as TCP_SND_QUEUELEN\n"));
-  if (TCP_SND_QUEUELEN < (2 * (TCP_SND_BUF / TCP_MSS)))
-    LWIP_PLATFORM_DIAG(("lwip_sanity_check: WARNING: TCP_SND_QUEUELEN must be at least as much as (2 * TCP_SND_BUF/TCP_MSS) for things to work\n"));
-  if (TCP_SNDLOWAT > TCP_SND_BUF)
-    LWIP_PLATFORM_DIAG(("lwip_sanity_check: WARNING: TCP_SNDLOWAT must be less than or equal to TCP_SND_BUF.\n"));
-  if (TCP_WND > (PBUF_POOL_SIZE * PBUF_POOL_BUFSIZE))
-    LWIP_PLATFORM_DIAG(("lwip_sanity_check: WARNING: TCP_WND is larger than space provided by PBUF_POOL_SIZE*PBUF_POOL_BUFSIZE\n"));
-  if (TCP_WND < TCP_MSS)
-    LWIP_PLATFORM_DIAG(("lwip_sanity_check: WARNING: TCP_WND is smaller than MSS\n"));
+    if (MEMP_NUM_TCP_SEG < TCP_SND_QUEUELEN)
+        LWIP_PLATFORM_DIAG(("lwip_sanity_check: WARNING: MEMP_NUM_TCP_SEG should be at least as big as TCP_SND_QUEUELEN\n"));
+    if (TCP_SND_QUEUELEN < (2 * (TCP_SND_BUF / TCP_MSS)))
+        LWIP_PLATFORM_DIAG(("lwip_sanity_check: WARNING: TCP_SND_QUEUELEN must be at least as much as (2 * TCP_SND_BUF/TCP_MSS) for things to work\n"));
+    if (TCP_SNDLOWAT > TCP_SND_BUF)
+        LWIP_PLATFORM_DIAG(("lwip_sanity_check: WARNING: TCP_SNDLOWAT must be less than or equal to TCP_SND_BUF.\n"));
+    if (TCP_WND > (PBUF_POOL_SIZE * PBUF_POOL_BUFSIZE))
+        LWIP_PLATFORM_DIAG(("lwip_sanity_check: WARNING: TCP_WND is larger than space provided by PBUF_POOL_SIZE*PBUF_POOL_BUFSIZE\n"));
+    if (TCP_WND < TCP_MSS)
+        LWIP_PLATFORM_DIAG(("lwip_sanity_check: WARNING: TCP_WND is smaller than MSS\n"));
 #endif /* LWIP_TCP */
 }
 #else /* LWIP_DEBUG */
@@ -213,39 +213,39 @@ lwip_sanity_check(void)
  */
 void lwip_init(void)
 {
-  /* Sanity check user-configurable values */
-  lwip_sanity_check();
+    /* Sanity check user-configurable values */
+    lwip_sanity_check();
 
-  /* Modules initialization */
-  stats_init();
-  sys_init();
-  mem_init();
-  memp_init();
-  pbuf_init();
-  netif_init();
+    /* Modules initialization */
+    stats_init();
+    sys_init();
+    mem_init();
+    memp_init();
+    pbuf_init();
+    netif_init();
 #if LWIP_SOCKET
-  lwip_socket_init();
+    lwip_socket_init();
 #endif /* LWIP_SOCKET */
-  ip_init();
+    ip_init();
 #if LWIP_ARP
-  etharp_init();
+    etharp_init();
 #endif /* LWIP_ARP */
 #if LWIP_RAW
-  raw_init();
+    raw_init();
 #endif /* LWIP_RAW */
 #if LWIP_UDP
-  udp_init();
+    udp_init();
 #endif /* LWIP_UDP */
 #if LWIP_TCP
-  tcp_init();
+    tcp_init();
 #endif /* LWIP_TCP */
 #if LWIP_AUTOIP
-  autoip_init();
+    autoip_init();
 #endif /* LWIP_AUTOIP */
 #if LWIP_IGMP
-  igmp_init();
+    igmp_init();
 #endif /* LWIP_IGMP */
 #if LWIP_DNS
-  dns_init();
+    dns_init();
 #endif /* LWIP_DNS */
 }

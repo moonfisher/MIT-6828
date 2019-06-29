@@ -7,13 +7,13 @@
 * The authors hereby grant permission to use, copy, modify, distribute,
 * and license this software and its documentation for any purpose, provided
 * that existing copyright notices are retained in all copies and that this
-* notice and the following disclaimer are included verbatim in any 
+* notice and the following disclaimer are included verbatim in any
 * distributions. No written agreement, license, or royalty fee is required
 * for any of the authorized uses.
 *
 * THIS SOFTWARE IS PROVIDED BY THE CONTRIBUTORS *AS IS* AND ANY EXPRESS OR
 * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-* OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
+* OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
 * IN NO EVENT SHALL THE CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
 * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
 * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
@@ -102,41 +102,41 @@
  */
 typedef struct fsm
 {
-  int unit;                        /* Interface unit number */
-  u_short protocol;                /* Data Link Layer Protocol field value */
-  int state;                       /* State */
-  int flags;                       /* Contains option bits */
-  u_char id;                       /* Current id */
-  u_char reqid;                    /* Current request id */
-  u_char seen_ack;                 /* Have received valid Ack/Nak/Rej to Req */
-  int timeouttime;                 /* Timeout time in milliseconds */
-  int maxconfreqtransmits;         /* Maximum Configure-Request transmissions */
-  int retransmits;                 /* Number of retransmissions left */
-  int maxtermtransmits;            /* Maximum Terminate-Request transmissions */
-  int nakloops;                    /* Number of nak loops since last ack */
-  int maxnakloops;                 /* Maximum number of nak loops tolerated */
-  struct fsm_callbacks *callbacks; /* Callback routines */
-  char *term_reason;               /* Reason for closing protocol */
-  int term_reason_len;             /* Length of term_reason */
+    int unit;                        /* Interface unit number */
+    u_short protocol;                /* Data Link Layer Protocol field value */
+    int state;                       /* State */
+    int flags;                       /* Contains option bits */
+    u_char id;                       /* Current id */
+    u_char reqid;                    /* Current request id */
+    u_char seen_ack;                 /* Have received valid Ack/Nak/Rej to Req */
+    int timeouttime;                 /* Timeout time in milliseconds */
+    int maxconfreqtransmits;         /* Maximum Configure-Request transmissions */
+    int retransmits;                 /* Number of retransmissions left */
+    int maxtermtransmits;            /* Maximum Terminate-Request transmissions */
+    int nakloops;                    /* Number of nak loops since last ack */
+    int maxnakloops;                 /* Maximum number of nak loops tolerated */
+    struct fsm_callbacks *callbacks; /* Callback routines */
+    char *term_reason;               /* Reason for closing protocol */
+    int term_reason_len;             /* Length of term_reason */
 } fsm;
 
 typedef struct fsm_callbacks
 {
-  void (*resetci)(fsm *);                            /* Reset our Configuration Information */
-  int (*cilen)(fsm *);                               /* Length of our Configuration Information */
-  void (*addci)(fsm *, u_char *, int *);             /* Add our Configuration Information */
-  int (*ackci)(fsm *, u_char *, int);                /* ACK our Configuration Information */
-  int (*nakci)(fsm *, u_char *, int);                /* NAK our Configuration Information */
-  int (*rejci)(fsm *, u_char *, int);                /* Reject our Configuration Information */
-  int (*reqci)(fsm *, u_char *, int *, int);         /* Request peer's Configuration Information */
-  void (*up)(fsm *);                                 /* Called when fsm reaches LS_OPENED state */
-  void (*down)(fsm *);                               /* Called when fsm leaves LS_OPENED state */
-  void (*starting)(fsm *);                           /* Called when we want the lower layer */
-  void (*finished)(fsm *);                           /* Called when we don't want the lower layer */
-  void (*protreject)(int);                           /* Called when Protocol-Reject received */
-  void (*retransmit)(fsm *);                         /* Retransmission is necessary */
-  int (*extcode)(fsm *, int, u_char, u_char *, int); /* Called when unknown code received */
-  char *proto_name;                                  /* String name for protocol (for messages) */
+    void (*resetci)(fsm *);                            /* Reset our Configuration Information */
+    int (*cilen)(fsm *);                               /* Length of our Configuration Information */
+    void (*addci)(fsm *, u_char *, int *);             /* Add our Configuration Information */
+    int (*ackci)(fsm *, u_char *, int);                /* ACK our Configuration Information */
+    int (*nakci)(fsm *, u_char *, int);                /* NAK our Configuration Information */
+    int (*rejci)(fsm *, u_char *, int);                /* Reject our Configuration Information */
+    int (*reqci)(fsm *, u_char *, int *, int);         /* Request peer's Configuration Information */
+    void (*up)(fsm *);                                 /* Called when fsm reaches LS_OPENED state */
+    void (*down)(fsm *);                               /* Called when fsm leaves LS_OPENED state */
+    void (*starting)(fsm *);                           /* Called when we want the lower layer */
+    void (*finished)(fsm *);                           /* Called when we don't want the lower layer */
+    void (*protreject)(int);                           /* Called when Protocol-Reject received */
+    void (*retransmit)(fsm *);                         /* Retransmission is necessary */
+    int (*extcode)(fsm *, int, u_char, u_char *, int); /* Called when unknown code received */
+    char *proto_name;                                  /* String name for protocol (for messages) */
 } fsm_callbacks;
 
 /*****************************************************************************

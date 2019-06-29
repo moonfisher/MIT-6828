@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001-2004 Swedish Institute of Computer Science.
- * All rights reserved. 
- * 
- * Redistribution and use in source and binary forms, with or without modification, 
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
  *
  * 1. Redistributions of source code must retain the above copyright notice,
@@ -11,21 +11,21 @@
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
  * 3. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission. 
+ *    derived from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED 
- * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
- * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT 
- * SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT 
- * OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING 
- * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY 
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
+ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT
+ * SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
+ * OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+ * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
  * OF SUCH DAMAGE.
  *
  * This file is part of the lwIP TCP/IP stack.
- * 
+ *
  * Author: Adam Dunkels <adam@sics.se>
  *
  */
@@ -45,22 +45,22 @@ extern "C"
 {
 #endif
 
-  /* members are in network byte order */
-  struct sockaddr_in
-  {
+/* members are in network byte order */
+struct sockaddr_in
+{
     u8_t sin_len;
     u8_t sin_family;
     u16_t sin_port;
     struct in_addr sin_addr;
     char sin_zero[8];
-  };
+};
 
-  struct sockaddr
-  {
+struct sockaddr
+{
     u8_t sa_len;
     u8_t sa_family;
     char sa_data[14];
-  };
+};
 
 #ifndef socklen_t
 #define socklen_t u32_t
@@ -101,14 +101,14 @@ extern "C"
 #define SO_CONTIMEO 0x1009 /* Unimplemented: connect timeout */
 #define SO_NO_CHECK 0x100a /* don't create UDP checksum */
 
-  /*
- * Structure used for manipulating linger option.
- */
-  struct linger
-  {
+/*
+* Structure used for manipulating linger option.
+*/
+struct linger
+{
     int l_onoff;  /* option on/off */
     int l_linger; /* linger time */
-  };
+};
 
 /*
  * Level number for (get/set)sockopt() to apply to socket itself.
@@ -170,11 +170,11 @@ extern "C"
 #define IP_MULTICAST_IF 6
 #define IP_MULTICAST_LOOP 7
 
-  typedef struct ip_mreq
-  {
+typedef struct ip_mreq
+{
     struct in_addr imr_multiaddr; /* IP multicast address of group */
     struct in_addr imr_interface; /* local IP address of interface */
-  } ip_mreq;
+} ip_mreq;
 #endif /* LWIP_IGMP */
 
 /*
@@ -237,8 +237,8 @@ extern "C"
 #define IOC_OUT 0x40000000UL  /* copy out parameters */
 #define IOC_IN 0x80000000UL   /* copy in parameters */
 #define IOC_INOUT (IOC_IN | IOC_OUT)
-  /* 0x20000000 distinguishes new &
-                                           old ioctl's */
+/* 0x20000000 distinguishes new &
+                                         old ioctl's */
 #define _IO(x, y) (IOC_VOID | ((x) << 8) | (y))
 
 #define _IOR(x, y, t) (IOC_OUT | (((long)sizeof(t) & IOCPARM_MASK) << 16) | ((x) << 8) | (y))
@@ -277,10 +277,10 @@ extern "C"
 #define FD_ISSET(n, p) ((p)->fd_bits[(n) / 8] & (1 << ((n)&7)))
 #define FD_ZERO(p) memset((void *)(p), 0, sizeof(*(p)))
 
-  typedef struct fd_set
-  {
+typedef struct fd_set
+{
     unsigned char fd_bits[(FD_SETSIZE + 7) / 8];
-  } fd_set;
+} fd_set;
 
 #endif /* FD_SET */
 
@@ -291,37 +291,37 @@ extern "C"
 #endif
 
 #if LWIP_TIMEVAL_PRIVATE
-  struct timeval
-  {
+struct timeval
+{
     long tv_sec;  /* seconds */
     long tv_usec; /* and microseconds */
-  };
+};
 #endif /* LWIP_TIMEVAL_PRIVATE */
 
-  void lwip_socket_init(void);
+void lwip_socket_init(void);
 
-  int lwip_accept(int s, struct sockaddr *addr, socklen_t *addrlen);
-  int lwip_bind(int s, struct sockaddr *name, socklen_t namelen);
-  int lwip_shutdown(int s, int how);
-  int lwip_getpeername(int s, struct sockaddr *name, socklen_t *namelen);
-  int lwip_getsockname(int s, struct sockaddr *name, socklen_t *namelen);
-  int lwip_getsockopt(int s, int level, int optname, void *optval, socklen_t *optlen);
-  int lwip_setsockopt(int s, int level, int optname, const void *optval, socklen_t optlen);
-  int lwip_close(int s);
-  int lwip_connect(int s, const struct sockaddr *name, socklen_t namelen);
-  int lwip_listen(int s, int backlog);
-  int lwip_recv(int s, void *mem, int len, unsigned int flags);
-  int lwip_read(int s, void *mem, int len);
-  int lwip_recvfrom(int s, void *mem, int len, unsigned int flags,
-                    struct sockaddr *from, socklen_t *fromlen);
-  int lwip_send(int s, const void *dataptr, int size, unsigned int flags);
-  int lwip_sendto(int s, const void *dataptr, int size, unsigned int flags,
-                  struct sockaddr *to, socklen_t tolen);
-  int lwip_socket(int domain, int type, int protocol);
-  int lwip_write(int s, const void *dataptr, int size);
-  int lwip_select(int maxfdp1, fd_set *readset, fd_set *writeset, fd_set *exceptset,
-                  struct timeval *timeout);
-  int lwip_ioctl(int s, long cmd, void *argp);
+int lwip_accept(int s, struct sockaddr *addr, socklen_t *addrlen);
+int lwip_bind(int s, struct sockaddr *name, socklen_t namelen);
+int lwip_shutdown(int s, int how);
+int lwip_getpeername(int s, struct sockaddr *name, socklen_t *namelen);
+int lwip_getsockname(int s, struct sockaddr *name, socklen_t *namelen);
+int lwip_getsockopt(int s, int level, int optname, void *optval, socklen_t *optlen);
+int lwip_setsockopt(int s, int level, int optname, const void *optval, socklen_t optlen);
+int lwip_close(int s);
+int lwip_connect(int s, const struct sockaddr *name, socklen_t namelen);
+int lwip_listen(int s, int backlog);
+int lwip_recv(int s, void *mem, int len, unsigned int flags);
+int lwip_read(int s, void *mem, int len);
+int lwip_recvfrom(int s, void *mem, int len, unsigned int flags,
+                  struct sockaddr *from, socklen_t *fromlen);
+int lwip_send(int s, const void *dataptr, int size, unsigned int flags);
+int lwip_sendto(int s, const void *dataptr, int size, unsigned int flags,
+                struct sockaddr *to, socklen_t tolen);
+int lwip_socket(int domain, int type, int protocol);
+int lwip_write(int s, const void *dataptr, int size);
+int lwip_select(int maxfdp1, fd_set *readset, fd_set *writeset, fd_set *exceptset,
+                struct timeval *timeout);
+int lwip_ioctl(int s, long cmd, void *argp);
 
 #if LWIP_COMPAT_SOCKETS
 #define accept(a, b, c) lwip_accept(a, b, c)

@@ -4,5 +4,5 @@
 
 void umain(int argc, char **argv)
 {
-	asm volatile("int $3");
+    asm volatile("int $3");
 }

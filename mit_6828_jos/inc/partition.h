@@ -23,12 +23,12 @@
 
 struct Partitiondesc
 {
-	uint8_t boot;
-	uint8_t chs_begin[3];
-	uint8_t type;
-	uint8_t chs_end[3];
-	uint32_t lba_start;
-	uint32_t lba_length;
+    uint8_t boot;
+    uint8_t chs_begin[3];
+    uint8_t type;
+    uint8_t chs_end[3];
+    uint32_t lba_start;
+    uint32_t lba_length;
 };
 
 #endif

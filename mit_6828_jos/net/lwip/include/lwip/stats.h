@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001-2004 Swedish Institute of Computer Science.
- * All rights reserved. 
- * 
- * Redistribution and use in source and binary forms, with or without modification, 
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
  *
  * 1. Redistributions of source code must retain the above copyright notice,
@@ -11,21 +11,21 @@
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
  * 3. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission. 
+ *    derived from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED 
- * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
- * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT 
- * SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT 
- * OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING 
- * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY 
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
+ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT
+ * SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
+ * OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+ * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
  * OF SUCH DAMAGE.
  *
  * This file is part of the lwIP TCP/IP stack.
- * 
+ *
  * Author: Adam Dunkels <adam@sics.se>
  *
  */
@@ -56,8 +56,8 @@ extern "C"
 #define STAT_COUNTER_F U16_F
 #endif
 
-  struct stats_proto
-  {
+struct stats_proto
+{
     STAT_COUNTER xmit;    /* Transmitted packets. */
     STAT_COUNTER recv;    /* Received packets. */
     STAT_COUNTER fw;      /* Forwarded packets. */
@@ -70,10 +70,10 @@ extern "C"
     STAT_COUNTER opterr;  /* Error in options. */
     STAT_COUNTER err;     /* Misc error. */
     STAT_COUNTER cachehit;
-  };
+};
 
-  struct stats_igmp
-  {
+struct stats_igmp
+{
     STAT_COUNTER lenerr;           /* Invalid length error. */
     STAT_COUNTER chkerr;           /* Checksum error. */
     STAT_COUNTER v1_rxed;          /* */
@@ -83,32 +83,32 @@ extern "C"
     STAT_COUNTER report_sent;      /* */
     STAT_COUNTER report_rxed;      /* */
     STAT_COUNTER group_query_rxed; /* */
-  };
+};
 
-  struct stats_mem
-  {
+struct stats_mem
+{
     mem_size_t avail;
     mem_size_t used;
     mem_size_t max;
     STAT_COUNTER err;
     STAT_COUNTER illegal;
-  };
+};
 
-  struct stats_syselem
-  {
+struct stats_syselem
+{
     STAT_COUNTER used;
     STAT_COUNTER max;
     STAT_COUNTER err;
-  };
+};
 
-  struct stats_sys
-  {
+struct stats_sys
+{
     struct stats_syselem sem;
     struct stats_syselem mbox;
-  };
+};
 
-  struct stats_
-  {
+struct stats_
+{
 #if LINK_STATS
     struct stats_proto link;
 #endif
@@ -142,9 +142,9 @@ extern "C"
 #if SYS_STATS
     struct stats_sys sys;
 #endif
-  };
+};
 
-  extern struct stats_ lwip_stats;
+extern struct stats_ lwip_stats;
 
 #define stats_init() /* Compatibility define, not init needed. */
 
@@ -276,12 +276,12 @@ extern "C"
 
 /* Display of statistics */
 #if LWIP_STATS_DISPLAY
-  void stats_display(void);
-  void stats_display_proto(struct stats_proto *proto, char *name);
-  void stats_display_igmp(struct stats_igmp *igmp);
-  void stats_display_mem(struct stats_mem *mem, char *name);
-  void stats_display_memp(struct stats_mem *mem, int index);
-  void stats_display_sys(struct stats_sys *sys);
+void stats_display(void);
+void stats_display_proto(struct stats_proto *proto, char *name);
+void stats_display_igmp(struct stats_igmp *igmp);
+void stats_display_mem(struct stats_mem *mem, char *name);
+void stats_display_memp(struct stats_mem *mem, int index);
+void stats_display_sys(struct stats_sys *sys);
 #else
 #define stats_display()
 #define stats_display_proto(proto, name)

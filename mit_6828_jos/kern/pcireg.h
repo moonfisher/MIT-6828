@@ -642,16 +642,16 @@ typedef uint8_t pci_intr_line_t;
  */
 struct pci_vpd_smallres
 {
-	uint8_t vpdres_byte0; /* length of data + tag */
-						  /* Actual data. */
+    uint8_t vpdres_byte0; /* length of data + tag */
+    /* Actual data. */
 } __attribute__((__packed__));
 
 struct pci_vpd_largeres
 {
-	uint8_t vpdres_byte0;
-	uint8_t vpdres_len_lsb; /* length of data only */
-	uint8_t vpdres_len_msb;
-	/* Actual data. */
+    uint8_t vpdres_byte0;
+    uint8_t vpdres_len_lsb; /* length of data only */
+    uint8_t vpdres_len_msb;
+    /* Actual data. */
 } __attribute__((__packed__));
 
 #define PCI_VPDRES_ISLARGE(x) ((x)&0x80)
@@ -670,10 +670,10 @@ struct pci_vpd_largeres
 
 struct pci_vpd
 {
-	uint8_t vpd_key0;
-	uint8_t vpd_key1;
-	uint8_t vpd_len; /* length of data only */
-					 /* Actual data. */
+    uint8_t vpd_key0;
+    uint8_t vpd_key1;
+    uint8_t vpd_len; /* length of data only */
+    /* Actual data. */
 } __attribute__((__packed__));
 
 /*

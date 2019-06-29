@@ -41,90 +41,90 @@
 
 struct e1000_tx_desc
 {
-       uint64_t addr;
-       uint16_t length;
-       uint8_t cso;
-       uint8_t cmd;
-       uint8_t status;
-       uint8_t css;
-       uint16_t special;
+    uint64_t addr;
+    uint16_t length;
+    uint8_t cso;
+    uint8_t cmd;
+    uint8_t status;
+    uint8_t css;
+    uint16_t special;
 } __attribute__((packed));
 
 struct e1000_tctl
 {
-       uint32_t rsv1 : 1;
-       uint32_t en : 1;
-       uint32_t rsv2 : 1;
-       uint32_t psp : 1;
-       uint32_t ct : 8;
-       uint32_t cold : 10;
-       uint32_t swxoff : 1;
-       uint32_t rsv3 : 1;
-       uint32_t rtlc : 1;
-       uint32_t nrtu : 1;
-       uint32_t rsv4 : 6;
+    uint32_t rsv1 : 1;
+    uint32_t en : 1;
+    uint32_t rsv2 : 1;
+    uint32_t psp : 1;
+    uint32_t ct : 8;
+    uint32_t cold : 10;
+    uint32_t swxoff : 1;
+    uint32_t rsv3 : 1;
+    uint32_t rtlc : 1;
+    uint32_t nrtu : 1;
+    uint32_t rsv4 : 6;
 };
 
 struct e1000_tipg
 {
-       uint32_t ipgt : 10;
-       uint32_t ipgr1 : 10;
-       uint32_t ipgr2 : 10;
-       uint32_t rsv : 2;
+    uint32_t ipgt : 10;
+    uint32_t ipgr1 : 10;
+    uint32_t ipgr2 : 10;
+    uint32_t rsv : 2;
 };
 
 struct e1000_tdt
 {
-       uint16_t tdt;
-       uint16_t rsv;
+    uint16_t tdt;
+    uint16_t rsv;
 };
 
 struct e1000_tdlen
 {
-       uint32_t zero : 7;
-       uint32_t len : 13;
-       uint32_t rsv : 12;
+    uint32_t zero : 7;
+    uint32_t len : 13;
+    uint32_t rsv : 12;
 };
 
 struct e1000_tdh
 {
-       uint16_t tdh;
-       uint16_t rsv;
+    uint16_t tdh;
+    uint16_t rsv;
 };
 
 struct e1000_rx_desc
 {
-       uint64_t addr;
-       uint16_t length;
-       uint16_t chksum;
-       uint8_t status;
-       uint8_t errors;
-       uint16_t special;
+    uint64_t addr;
+    uint16_t length;
+    uint16_t chksum;
+    uint8_t status;
+    uint8_t errors;
+    uint16_t special;
 } __attribute__((packed));
 
 struct e1000_rdlen
 {
-       unsigned zero : 7;
-       unsigned len : 13;
-       unsigned rsv : 12;
+    unsigned zero : 7;
+    unsigned len : 13;
+    unsigned rsv : 12;
 };
 
 struct e1000_rdh
 {
-       uint16_t rdh;
-       uint16_t rsv;
+    uint16_t rdh;
+    uint16_t rsv;
 };
 
 struct e1000_rdt
 {
-       uint16_t rdt;
-       uint16_t rsv;
+    uint16_t rdt;
+    uint16_t rsv;
 };
 
 enum
 {
-       E_TRANSMIT_RETRY = 1,
-       E_RECEIVE_RETRY
+    E_TRANSMIT_RETRY = 1,
+    E_RECEIVE_RETRY
 };
 
 int e1000_attachfn(struct pci_func *pcif);

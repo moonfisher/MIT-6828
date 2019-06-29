@@ -73,23 +73,23 @@ extern "C"
 #define SNMP_ASN1_PDU_SET_REQ 3
 #define SNMP_ASN1_PDU_TRAP 4
 
-    err_t snmp_asn1_dec_type(struct pbuf *p, u16_t ofs, u8_t *type);
-    err_t snmp_asn1_dec_length(struct pbuf *p, u16_t ofs, u8_t *octets_used, u16_t *length);
-    err_t snmp_asn1_dec_u32t(struct pbuf *p, u16_t ofs, u16_t len, u32_t *value);
-    err_t snmp_asn1_dec_s32t(struct pbuf *p, u16_t ofs, u16_t len, s32_t *value);
-    err_t snmp_asn1_dec_oid(struct pbuf *p, u16_t ofs, u16_t len, struct snmp_obj_id *oid);
-    err_t snmp_asn1_dec_raw(struct pbuf *p, u16_t ofs, u16_t len, u16_t raw_len, u8_t *raw);
+err_t snmp_asn1_dec_type(struct pbuf *p, u16_t ofs, u8_t *type);
+err_t snmp_asn1_dec_length(struct pbuf *p, u16_t ofs, u8_t *octets_used, u16_t *length);
+err_t snmp_asn1_dec_u32t(struct pbuf *p, u16_t ofs, u16_t len, u32_t *value);
+err_t snmp_asn1_dec_s32t(struct pbuf *p, u16_t ofs, u16_t len, s32_t *value);
+err_t snmp_asn1_dec_oid(struct pbuf *p, u16_t ofs, u16_t len, struct snmp_obj_id *oid);
+err_t snmp_asn1_dec_raw(struct pbuf *p, u16_t ofs, u16_t len, u16_t raw_len, u8_t *raw);
 
-    void snmp_asn1_enc_length_cnt(u16_t length, u8_t *octets_needed);
-    void snmp_asn1_enc_u32t_cnt(u32_t value, u16_t *octets_needed);
-    void snmp_asn1_enc_s32t_cnt(s32_t value, u16_t *octets_needed);
-    void snmp_asn1_enc_oid_cnt(u8_t ident_len, s32_t *ident, u16_t *octets_needed);
-    err_t snmp_asn1_enc_type(struct pbuf *p, u16_t ofs, u8_t type);
-    err_t snmp_asn1_enc_length(struct pbuf *p, u16_t ofs, u16_t length);
-    err_t snmp_asn1_enc_u32t(struct pbuf *p, u16_t ofs, u8_t octets_needed, u32_t value);
-    err_t snmp_asn1_enc_s32t(struct pbuf *p, u16_t ofs, u8_t octets_needed, s32_t value);
-    err_t snmp_asn1_enc_oid(struct pbuf *p, u16_t ofs, u8_t ident_len, s32_t *ident);
-    err_t snmp_asn1_enc_raw(struct pbuf *p, u16_t ofs, u8_t raw_len, u8_t *raw);
+void snmp_asn1_enc_length_cnt(u16_t length, u8_t *octets_needed);
+void snmp_asn1_enc_u32t_cnt(u32_t value, u16_t *octets_needed);
+void snmp_asn1_enc_s32t_cnt(s32_t value, u16_t *octets_needed);
+void snmp_asn1_enc_oid_cnt(u8_t ident_len, s32_t *ident, u16_t *octets_needed);
+err_t snmp_asn1_enc_type(struct pbuf *p, u16_t ofs, u8_t type);
+err_t snmp_asn1_enc_length(struct pbuf *p, u16_t ofs, u16_t length);
+err_t snmp_asn1_enc_u32t(struct pbuf *p, u16_t ofs, u8_t octets_needed, u32_t value);
+err_t snmp_asn1_enc_s32t(struct pbuf *p, u16_t ofs, u8_t octets_needed, s32_t value);
+err_t snmp_asn1_enc_oid(struct pbuf *p, u16_t ofs, u8_t ident_len, s32_t *ident);
+err_t snmp_asn1_enc_raw(struct pbuf *p, u16_t ofs, u8_t raw_len, u8_t *raw);
 
 #ifdef __cplusplus
 }

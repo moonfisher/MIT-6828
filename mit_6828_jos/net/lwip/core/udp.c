@@ -82,260 +82,260 @@ struct udp_pcb *udp_pcbs;
  */
 void udp_input(struct pbuf *p, struct netif *inp)
 {
-  struct udp_hdr *udphdr;
-  struct udp_pcb *pcb, *prev;
-  struct udp_pcb *uncon_pcb;
-  struct ip_hdr *iphdr;
-  u16_t src, dest;
-  u8_t local_match;
+    struct udp_hdr *udphdr;
+    struct udp_pcb *pcb, *prev;
+    struct udp_pcb *uncon_pcb;
+    struct ip_hdr *iphdr;
+    u16_t src, dest;
+    u8_t local_match;
 
-  PERF_START;
+    PERF_START;
 
-  UDP_STATS_INC(udp.recv);
+    UDP_STATS_INC(udp.recv);
 
-  iphdr = p->payload;
+    iphdr = p->payload;
 
-  /* Check minimum length (IP header + UDP header)
-   * and move payload pointer to UDP header */
-  if (p->tot_len < (IPH_HL(iphdr) * 4 + UDP_HLEN) || pbuf_header(p, -(s16_t)(IPH_HL(iphdr) * 4)))
-  {
-    /* drop short packets */
-    LWIP_DEBUGF(UDP_DEBUG,
-                ("udp_input: short UDP datagram (%" U16_F " bytes) discarded\n", p->tot_len));
-    UDP_STATS_INC(udp.lenerr);
-    UDP_STATS_INC(udp.drop);
-    snmp_inc_udpinerrors();
-    pbuf_free(p);
-    goto end;
-  }
-
-  udphdr = (struct udp_hdr *)p->payload;
-
-  LWIP_DEBUGF(UDP_DEBUG, ("udp_input: received datagram of length %" U16_F "\n", p->tot_len));
-
-  /* convert src and dest ports to host byte order */
-  src = ntohs(udphdr->src);
-  dest = ntohs(udphdr->dest);
-
-  udp_debug_print(udphdr);
-
-  /* print the UDP source and destination */
-  LWIP_DEBUGF(UDP_DEBUG,
-              ("udp (%" U16_F ".%" U16_F ".%" U16_F ".%" U16_F ", %" U16_F ") <-- "
-               "(%" U16_F ".%" U16_F ".%" U16_F ".%" U16_F ", %" U16_F ")\n",
-               ip4_addr1(&iphdr->dest), ip4_addr2(&iphdr->dest),
-               ip4_addr3(&iphdr->dest), ip4_addr4(&iphdr->dest), ntohs(udphdr->dest),
-               ip4_addr1(&iphdr->src), ip4_addr2(&iphdr->src),
-               ip4_addr3(&iphdr->src), ip4_addr4(&iphdr->src), ntohs(udphdr->src)));
-
-#if LWIP_DHCP
-  pcb = NULL;
-  /* when LWIP_DHCP is active, packets to DHCP_CLIENT_PORT may only be processed by
-     the dhcp module, no other UDP pcb may use the local UDP port DHCP_CLIENT_PORT */
-  if (dest == DHCP_CLIENT_PORT)
-  {
-    /* all packets for DHCP_CLIENT_PORT not coming from DHCP_SERVER_PORT are dropped! */
-    if (src == DHCP_SERVER_PORT)
+    /* Check minimum length (IP header + UDP header)
+     * and move payload pointer to UDP header */
+    if (p->tot_len < (IPH_HL(iphdr) * 4 + UDP_HLEN) || pbuf_header(p, -(s16_t)(IPH_HL(iphdr) * 4)))
     {
-      if ((inp->dhcp != NULL) && (inp->dhcp->pcb != NULL))
-      {
-        /* accept the packe if 
-           (- broadcast or directed to us) -> DHCP is link-layer-addressed, local ip is always ANY!
-           - inp->dhcp->pcb->remote == ANY or iphdr->src */
-        if ((ip_addr_isany(&inp->dhcp->pcb->remote_ip) ||
-             ip_addr_cmp(&(inp->dhcp->pcb->remote_ip), &(iphdr->src))))
-        {
-          pcb = inp->dhcp->pcb;
-        }
-      }
-    }
-  }
-  else
-#endif /* LWIP_DHCP */
-  {
-    prev = NULL;
-    local_match = 0;
-    uncon_pcb = NULL;
-    /* Iterate through the UDP pcb list for a matching pcb.
-     * 'Perfect match' pcbs (connected to the remote port & ip address) are
-     * preferred. If no perfect match is found, the first unconnected pcb that
-     * matches the local port and ip address gets the datagram. */
-    for (pcb = udp_pcbs; pcb != NULL; pcb = pcb->next)
-    {
-      local_match = 0;
-      /* print the PCB local and remote address */
-      LWIP_DEBUGF(UDP_DEBUG,
-                  ("pcb (%" U16_F ".%" U16_F ".%" U16_F ".%" U16_F ", %" U16_F ") --- "
-                   "(%" U16_F ".%" U16_F ".%" U16_F ".%" U16_F ", %" U16_F ")\n",
-                   ip4_addr1(&pcb->local_ip), ip4_addr2(&pcb->local_ip),
-                   ip4_addr3(&pcb->local_ip), ip4_addr4(&pcb->local_ip), pcb->local_port,
-                   ip4_addr1(&pcb->remote_ip), ip4_addr2(&pcb->remote_ip),
-                   ip4_addr3(&pcb->remote_ip), ip4_addr4(&pcb->remote_ip), pcb->remote_port));
-
-      /* compare PCB local addr+port to UDP destination addr+port */
-      if ((pcb->local_port == dest) &&
-          (ip_addr_isany(&pcb->local_ip) ||
-           ip_addr_cmp(&(pcb->local_ip), &(iphdr->dest)) ||
-#if LWIP_IGMP
-           ip_addr_ismulticast(&(iphdr->dest)) ||
-#endif /* LWIP_IGMP */
-           ip_addr_isbroadcast(&(iphdr->dest), inp)))
-      {
-        local_match = 1;
-        if ((uncon_pcb == NULL) &&
-            ((pcb->flags & UDP_FLAGS_CONNECTED) == 0))
-        {
-          /* the first unconnected matching PCB */
-          uncon_pcb = pcb;
-        }
-      }
-      /* compare PCB remote addr+port to UDP source addr+port */
-      if ((local_match != 0) &&
-          (pcb->remote_port == src) &&
-          (ip_addr_isany(&pcb->remote_ip) ||
-           ip_addr_cmp(&(pcb->remote_ip), &(iphdr->src))))
-      {
-        /* the first fully matching PCB */
-        if (prev != NULL)
-        {
-          /* move the pcb to the front of udp_pcbs so that is
-             found faster next time */
-          prev->next = pcb->next;
-          pcb->next = udp_pcbs;
-          udp_pcbs = pcb;
-        }
-        else
-        {
-          UDP_STATS_INC(udp.cachehit);
-        }
-        break;
-      }
-      prev = pcb;
-    }
-    /* no fully matching pcb found? then look for an unconnected pcb */
-    if (pcb == NULL)
-    {
-      pcb = uncon_pcb;
-    }
-  }
-
-  /* Check checksum if this is a match or if it was directed at us. */
-  if (pcb != NULL || ip_addr_cmp(&inp->ip_addr, &iphdr->dest))
-  {
-    LWIP_DEBUGF(UDP_DEBUG | LWIP_DBG_TRACE, ("udp_input: calculating checksum\n"));
-#if LWIP_UDPLITE
-    if (IPH_PROTO(iphdr) == IP_PROTO_UDPLITE)
-    {
-      /* Do the UDP Lite checksum */
-#if CHECKSUM_CHECK_UDP
-      u16_t chklen = ntohs(udphdr->len);
-      if (chklen < sizeof(struct udp_hdr))
-      {
-        if (chklen == 0)
-        {
-          /* For UDP-Lite, checksum length of 0 means checksum
-             over the complete packet (See RFC 3828 chap. 3.1) */
-          chklen = p->tot_len;
-        }
-        else
-        {
-          /* At least the UDP-Lite header must be covered by the
-             checksum! (Again, see RFC 3828 chap. 3.1) */
-          UDP_STATS_INC(udp.chkerr);
-          UDP_STATS_INC(udp.drop);
-          snmp_inc_udpinerrors();
-          pbuf_free(p);
-          goto end;
-        }
-      }
-      if (inet_chksum_pseudo_partial(p, (struct ip_addr *)&(iphdr->src),
-                                     (struct ip_addr *)&(iphdr->dest),
-                                     IP_PROTO_UDPLITE, p->tot_len, chklen) != 0)
-      {
-        LWIP_DEBUGF(UDP_DEBUG | 2,
-                    ("udp_input: UDP Lite datagram discarded due to failing checksum\n"));
-        UDP_STATS_INC(udp.chkerr);
+        /* drop short packets */
+        LWIP_DEBUGF(UDP_DEBUG,
+                    ("udp_input: short UDP datagram (%" U16_F " bytes) discarded\n", p->tot_len));
+        UDP_STATS_INC(udp.lenerr);
         UDP_STATS_INC(udp.drop);
         snmp_inc_udpinerrors();
         pbuf_free(p);
         goto end;
-      }
-#endif /* CHECKSUM_CHECK_UDP */
     }
-    else
-#endif /* LWIP_UDPLITE */
+
+    udphdr = (struct udp_hdr *)p->payload;
+
+    LWIP_DEBUGF(UDP_DEBUG, ("udp_input: received datagram of length %" U16_F "\n", p->tot_len));
+
+    /* convert src and dest ports to host byte order */
+    src = ntohs(udphdr->src);
+    dest = ntohs(udphdr->dest);
+
+    udp_debug_print(udphdr);
+
+    /* print the UDP source and destination */
+    LWIP_DEBUGF(UDP_DEBUG,
+                ("udp (%" U16_F ".%" U16_F ".%" U16_F ".%" U16_F ", %" U16_F ") <-- "
+                 "(%" U16_F ".%" U16_F ".%" U16_F ".%" U16_F ", %" U16_F ")\n",
+                 ip4_addr1(&iphdr->dest), ip4_addr2(&iphdr->dest),
+                 ip4_addr3(&iphdr->dest), ip4_addr4(&iphdr->dest), ntohs(udphdr->dest),
+                 ip4_addr1(&iphdr->src), ip4_addr2(&iphdr->src),
+                 ip4_addr3(&iphdr->src), ip4_addr4(&iphdr->src), ntohs(udphdr->src)));
+
+#if LWIP_DHCP
+    pcb = NULL;
+    /* when LWIP_DHCP is active, packets to DHCP_CLIENT_PORT may only be processed by
+       the dhcp module, no other UDP pcb may use the local UDP port DHCP_CLIENT_PORT */
+    if (dest == DHCP_CLIENT_PORT)
     {
-#if CHECKSUM_CHECK_UDP
-      if (udphdr->chksum != 0)
-      {
-        if (inet_chksum_pseudo(p, (struct ip_addr *)&(iphdr->src),
-                               (struct ip_addr *)&(iphdr->dest),
-                               IP_PROTO_UDP, p->tot_len) != 0)
+        /* all packets for DHCP_CLIENT_PORT not coming from DHCP_SERVER_PORT are dropped! */
+        if (src == DHCP_SERVER_PORT)
         {
-          LWIP_DEBUGF(UDP_DEBUG | 2,
-                      ("udp_input: UDP datagram discarded due to failing checksum\n"));
-          UDP_STATS_INC(udp.chkerr);
-          UDP_STATS_INC(udp.drop);
-          snmp_inc_udpinerrors();
-          pbuf_free(p);
-          goto end;
+            if ((inp->dhcp != NULL) && (inp->dhcp->pcb != NULL))
+            {
+                /* accept the packe if
+                   (- broadcast or directed to us) -> DHCP is link-layer-addressed, local ip is always ANY!
+                   - inp->dhcp->pcb->remote == ANY or iphdr->src */
+                if ((ip_addr_isany(&inp->dhcp->pcb->remote_ip) ||
+                        ip_addr_cmp(&(inp->dhcp->pcb->remote_ip), &(iphdr->src))))
+                {
+                    pcb = inp->dhcp->pcb;
+                }
+            }
         }
-      }
-#endif /* CHECKSUM_CHECK_UDP */
-    }
-    if (pbuf_header(p, -UDP_HLEN))
-    {
-      /* Can we cope with this failing? Just assert for now */
-      LWIP_ASSERT("pbuf_header failed\n", 0);
-      UDP_STATS_INC(udp.drop);
-      snmp_inc_udpinerrors();
-      pbuf_free(p);
-      goto end;
-    }
-    if (pcb != NULL)
-    {
-      snmp_inc_udpindatagrams();
-      /* callback */
-      if (pcb->recv != NULL)
-      {
-        /* now the recv function is responsible for freeing p */
-        pcb->recv(pcb->recv_arg, pcb, p, &(iphdr->src), src);
-      }
-      else
-      {
-        /* no recv function registered? then we have to free the pbuf! */
-        pbuf_free(p);
-        goto end;
-      }
     }
     else
+#endif /* LWIP_DHCP */
     {
-      LWIP_DEBUGF(UDP_DEBUG | LWIP_DBG_TRACE, ("udp_input: not for us.\n"));
+        prev = NULL;
+        local_match = 0;
+        uncon_pcb = NULL;
+        /* Iterate through the UDP pcb list for a matching pcb.
+         * 'Perfect match' pcbs (connected to the remote port & ip address) are
+         * preferred. If no perfect match is found, the first unconnected pcb that
+         * matches the local port and ip address gets the datagram. */
+        for (pcb = udp_pcbs; pcb != NULL; pcb = pcb->next)
+        {
+            local_match = 0;
+            /* print the PCB local and remote address */
+            LWIP_DEBUGF(UDP_DEBUG,
+                        ("pcb (%" U16_F ".%" U16_F ".%" U16_F ".%" U16_F ", %" U16_F ") --- "
+                         "(%" U16_F ".%" U16_F ".%" U16_F ".%" U16_F ", %" U16_F ")\n",
+                         ip4_addr1(&pcb->local_ip), ip4_addr2(&pcb->local_ip),
+                         ip4_addr3(&pcb->local_ip), ip4_addr4(&pcb->local_ip), pcb->local_port,
+                         ip4_addr1(&pcb->remote_ip), ip4_addr2(&pcb->remote_ip),
+                         ip4_addr3(&pcb->remote_ip), ip4_addr4(&pcb->remote_ip), pcb->remote_port));
+
+            /* compare PCB local addr+port to UDP destination addr+port */
+            if ((pcb->local_port == dest) &&
+                    (ip_addr_isany(&pcb->local_ip) ||
+                     ip_addr_cmp(&(pcb->local_ip), &(iphdr->dest)) ||
+#if LWIP_IGMP
+                     ip_addr_ismulticast(&(iphdr->dest)) ||
+#endif /* LWIP_IGMP */
+                     ip_addr_isbroadcast(&(iphdr->dest), inp)))
+            {
+                local_match = 1;
+                if ((uncon_pcb == NULL) &&
+                        ((pcb->flags & UDP_FLAGS_CONNECTED) == 0))
+                {
+                    /* the first unconnected matching PCB */
+                    uncon_pcb = pcb;
+                }
+            }
+            /* compare PCB remote addr+port to UDP source addr+port */
+            if ((local_match != 0) &&
+                    (pcb->remote_port == src) &&
+                    (ip_addr_isany(&pcb->remote_ip) ||
+                     ip_addr_cmp(&(pcb->remote_ip), &(iphdr->src))))
+            {
+                /* the first fully matching PCB */
+                if (prev != NULL)
+                {
+                    /* move the pcb to the front of udp_pcbs so that is
+                       found faster next time */
+                    prev->next = pcb->next;
+                    pcb->next = udp_pcbs;
+                    udp_pcbs = pcb;
+                }
+                else
+                {
+                    UDP_STATS_INC(udp.cachehit);
+                }
+                break;
+            }
+            prev = pcb;
+        }
+        /* no fully matching pcb found? then look for an unconnected pcb */
+        if (pcb == NULL)
+        {
+            pcb = uncon_pcb;
+        }
+    }
+
+    /* Check checksum if this is a match or if it was directed at us. */
+    if (pcb != NULL || ip_addr_cmp(&inp->ip_addr, &iphdr->dest))
+    {
+        LWIP_DEBUGF(UDP_DEBUG | LWIP_DBG_TRACE, ("udp_input: calculating checksum\n"));
+#if LWIP_UDPLITE
+        if (IPH_PROTO(iphdr) == IP_PROTO_UDPLITE)
+        {
+            /* Do the UDP Lite checksum */
+#if CHECKSUM_CHECK_UDP
+            u16_t chklen = ntohs(udphdr->len);
+            if (chklen < sizeof(struct udp_hdr))
+            {
+                if (chklen == 0)
+                {
+                    /* For UDP-Lite, checksum length of 0 means checksum
+                       over the complete packet (See RFC 3828 chap. 3.1) */
+                    chklen = p->tot_len;
+                }
+                else
+                {
+                    /* At least the UDP-Lite header must be covered by the
+                       checksum! (Again, see RFC 3828 chap. 3.1) */
+                    UDP_STATS_INC(udp.chkerr);
+                    UDP_STATS_INC(udp.drop);
+                    snmp_inc_udpinerrors();
+                    pbuf_free(p);
+                    goto end;
+                }
+            }
+            if (inet_chksum_pseudo_partial(p, (struct ip_addr *) & (iphdr->src),
+                                           (struct ip_addr *) & (iphdr->dest),
+                                           IP_PROTO_UDPLITE, p->tot_len, chklen) != 0)
+            {
+                LWIP_DEBUGF(UDP_DEBUG | 2,
+                            ("udp_input: UDP Lite datagram discarded due to failing checksum\n"));
+                UDP_STATS_INC(udp.chkerr);
+                UDP_STATS_INC(udp.drop);
+                snmp_inc_udpinerrors();
+                pbuf_free(p);
+                goto end;
+            }
+#endif /* CHECKSUM_CHECK_UDP */
+        }
+        else
+#endif /* LWIP_UDPLITE */
+        {
+#if CHECKSUM_CHECK_UDP
+            if (udphdr->chksum != 0)
+            {
+                if (inet_chksum_pseudo(p, (struct ip_addr *) & (iphdr->src),
+                                       (struct ip_addr *) & (iphdr->dest),
+                                       IP_PROTO_UDP, p->tot_len) != 0)
+                {
+                    LWIP_DEBUGF(UDP_DEBUG | 2,
+                                ("udp_input: UDP datagram discarded due to failing checksum\n"));
+                    UDP_STATS_INC(udp.chkerr);
+                    UDP_STATS_INC(udp.drop);
+                    snmp_inc_udpinerrors();
+                    pbuf_free(p);
+                    goto end;
+                }
+            }
+#endif /* CHECKSUM_CHECK_UDP */
+        }
+        if (pbuf_header(p, -UDP_HLEN))
+        {
+            /* Can we cope with this failing? Just assert for now */
+            LWIP_ASSERT("pbuf_header failed\n", 0);
+            UDP_STATS_INC(udp.drop);
+            snmp_inc_udpinerrors();
+            pbuf_free(p);
+            goto end;
+        }
+        if (pcb != NULL)
+        {
+            snmp_inc_udpindatagrams();
+            /* callback */
+            if (pcb->recv != NULL)
+            {
+                /* now the recv function is responsible for freeing p */
+                pcb->recv(pcb->recv_arg, pcb, p, &(iphdr->src), src);
+            }
+            else
+            {
+                /* no recv function registered? then we have to free the pbuf! */
+                pbuf_free(p);
+                goto end;
+            }
+        }
+        else
+        {
+            LWIP_DEBUGF(UDP_DEBUG | LWIP_DBG_TRACE, ("udp_input: not for us.\n"));
 
 #if LWIP_ICMP
-      /* No match was found, send ICMP destination port unreachable unless
-         destination address was broadcast/multicast. */
-      if (!ip_addr_isbroadcast(&iphdr->dest, inp) &&
-          !ip_addr_ismulticast(&iphdr->dest))
-      {
-        /* move payload pointer back to ip header */
-        pbuf_header(p, (IPH_HL(iphdr) * 4) + UDP_HLEN);
-        LWIP_ASSERT("p->payload == iphdr", (p->payload == iphdr));
-        icmp_dest_unreach(p, ICMP_DUR_PORT);
-      }
+            /* No match was found, send ICMP destination port unreachable unless
+               destination address was broadcast/multicast. */
+            if (!ip_addr_isbroadcast(&iphdr->dest, inp) &&
+                    !ip_addr_ismulticast(&iphdr->dest))
+            {
+                /* move payload pointer back to ip header */
+                pbuf_header(p, (IPH_HL(iphdr) * 4) + UDP_HLEN);
+                LWIP_ASSERT("p->payload == iphdr", (p->payload == iphdr));
+                icmp_dest_unreach(p, ICMP_DUR_PORT);
+            }
 #endif /* LWIP_ICMP */
-      UDP_STATS_INC(udp.proterr);
-      UDP_STATS_INC(udp.drop);
-      snmp_inc_udpnoports();
-      pbuf_free(p);
+            UDP_STATS_INC(udp.proterr);
+            UDP_STATS_INC(udp.drop);
+            snmp_inc_udpnoports();
+            pbuf_free(p);
+        }
     }
-  }
-  else
-  {
-    pbuf_free(p);
-  }
+    else
+    {
+        pbuf_free(p);
+    }
 end:
-  PERF_STOP("udp_input");
+    PERF_STOP("udp_input");
 }
 
 /**
@@ -358,8 +358,8 @@ end:
  */
 err_t udp_send(struct udp_pcb *pcb, struct pbuf *p)
 {
-  /* send to the packet using remote ip and port stored in the pcb */
-  return udp_sendto(pcb, p, &pcb->remote_ip, pcb->remote_port);
+    /* send to the packet using remote ip and port stored in the pcb */
+    return udp_sendto(pcb, p, &pcb->remote_ip, pcb->remote_port);
 }
 
 /**
@@ -374,7 +374,7 @@ err_t udp_send(struct udp_pcb *pcb, struct pbuf *p)
  *
  * If the PCB already has a remote address association, it will
  * be restored after the data is sent.
- * 
+ *
  * @return lwIP error code (@see udp_send for possible error codes)
  *
  * @see udp_disconnect() udp_send()
@@ -382,25 +382,25 @@ err_t udp_send(struct udp_pcb *pcb, struct pbuf *p)
 err_t udp_sendto(struct udp_pcb *pcb, struct pbuf *p,
                  struct ip_addr *dst_ip, u16_t dst_port)
 {
-  struct netif *netif;
+    struct netif *netif;
 
-  LWIP_DEBUGF(UDP_DEBUG | LWIP_DBG_TRACE | 3, ("udp_send\n"));
+    LWIP_DEBUGF(UDP_DEBUG | LWIP_DBG_TRACE | 3, ("udp_send\n"));
 
-  /* find the outgoing network interface for this packet */
+    /* find the outgoing network interface for this packet */
 #if LWIP_IGMP
-  netif = ip_route((ip_addr_ismulticast(dst_ip)) ? (&(pcb->multicast_ip)) : (dst_ip));
+    netif = ip_route((ip_addr_ismulticast(dst_ip)) ? (&(pcb->multicast_ip)) : (dst_ip));
 #else
-  netif = ip_route(dst_ip);
+    netif = ip_route(dst_ip);
 #endif /* LWIP_IGMP */
 
-  /* no outgoing network interface could be found? */
-  if (netif == NULL)
-  {
-    LWIP_DEBUGF(UDP_DEBUG | 1, ("udp_send: No route to 0x%" X32_F "\n", dst_ip->addr));
-    UDP_STATS_INC(udp.rterr);
-    return ERR_RTE;
-  }
-  return udp_sendto_if(pcb, p, dst_ip, dst_port, netif);
+    /* no outgoing network interface could be found? */
+    if (netif == NULL)
+    {
+        LWIP_DEBUGF(UDP_DEBUG | 1, ("udp_send: No route to 0x%" X32_F "\n", dst_ip->addr));
+        UDP_STATS_INC(udp.rterr);
+        return ERR_RTE;
+    }
+    return udp_sendto_if(pcb, p, dst_ip, dst_port, netif);
 }
 
 /**
@@ -425,166 +425,167 @@ err_t udp_sendto(struct udp_pcb *pcb, struct pbuf *p,
 err_t udp_sendto_if(struct udp_pcb *pcb, struct pbuf *p,
                     struct ip_addr *dst_ip, u16_t dst_port, struct netif *netif)
 {
-  struct udp_hdr *udphdr;
-  struct ip_addr *src_ip;
-  err_t err;
-  struct pbuf *q; /* q will be sent down the stack */
+    struct udp_hdr *udphdr;
+    struct ip_addr *src_ip;
+    err_t err;
+    struct pbuf *q; /* q will be sent down the stack */
 
-  /* if the PCB is not yet bound to a port, bind it here */
-  if (pcb->local_port == 0)
-  {
-    LWIP_DEBUGF(UDP_DEBUG | LWIP_DBG_TRACE | 2, ("udp_send: not yet bound to a port, binding now\n"));
-    err = udp_bind(pcb, &pcb->local_ip, pcb->local_port);
-    if (err != ERR_OK)
+    /* if the PCB is not yet bound to a port, bind it here */
+    if (pcb->local_port == 0)
     {
-      LWIP_DEBUGF(UDP_DEBUG | LWIP_DBG_TRACE | 2, ("udp_send: forced port bind failed\n"));
-      return err;
+        LWIP_DEBUGF(UDP_DEBUG | LWIP_DBG_TRACE | 2, ("udp_send: not yet bound to a port, binding now\n"));
+        err = udp_bind(pcb, &pcb->local_ip, pcb->local_port);
+        if (err != ERR_OK)
+        {
+            LWIP_DEBUGF(UDP_DEBUG | LWIP_DBG_TRACE | 2, ("udp_send: forced port bind failed\n"));
+            return err;
+        }
     }
-  }
 
-  /* not enough space to add an UDP header to first pbuf in given p chain? */
-  if (pbuf_header(p, UDP_HLEN))
-  {
-    /* allocate header in a separate new pbuf */
-    q = pbuf_alloc(PBUF_IP, UDP_HLEN, PBUF_RAM);
-    /* new header pbuf could not be allocated? */
-    if (q == NULL)
+    /* not enough space to add an UDP header to first pbuf in given p chain? */
+    if (pbuf_header(p, UDP_HLEN))
     {
-      LWIP_DEBUGF(UDP_DEBUG | LWIP_DBG_TRACE | 2, ("udp_send: could not allocate header\n"));
-      return ERR_MEM;
+        /* allocate header in a separate new pbuf */
+        q = pbuf_alloc(PBUF_IP, UDP_HLEN, PBUF_RAM);
+        /* new header pbuf could not be allocated? */
+        if (q == NULL)
+        {
+            LWIP_DEBUGF(UDP_DEBUG | LWIP_DBG_TRACE | 2, ("udp_send: could not allocate header\n"));
+            return ERR_MEM;
+        }
+        /* chain header q in front of given pbuf p */
+        pbuf_chain(q, p);
+        /* first pbuf q points to header pbuf */
+        LWIP_DEBUGF(UDP_DEBUG,
+                    ("udp_send: added header pbuf %p before given pbuf %p\n", (void *)q, (void *)p));
     }
-    /* chain header q in front of given pbuf p */
-    pbuf_chain(q, p);
-    /* first pbuf q points to header pbuf */
-    LWIP_DEBUGF(UDP_DEBUG,
-                ("udp_send: added header pbuf %p before given pbuf %p\n", (void *)q, (void *)p));
-  }
-  else
-  {
-    /* adding space for header within p succeeded */
-    /* first pbuf q equals given pbuf */
-    q = p;
-    LWIP_DEBUGF(UDP_DEBUG, ("udp_send: added header in given pbuf %p\n", (void *)p));
-  }
-  LWIP_ASSERT("check that first pbuf can hold struct udp_hdr",
-              (q->len >= sizeof(struct udp_hdr)));
-  /* q now represents the packet to be sent */
-  udphdr = q->payload;
-  udphdr->src = htons(pcb->local_port);
-  udphdr->dest = htons(dst_port);
-  /* in UDP, 0 checksum means 'no checksum' */
-  udphdr->chksum = 0x0000;
-
-  /* PCB local address is IP_ANY_ADDR? */
-  if (ip_addr_isany(&pcb->local_ip))
-  {
-    /* use outgoing network interface IP address as source address */
-    src_ip = &(netif->ip_addr);
-  }
-  else
-  {
-    /* check if UDP PCB local IP address is correct
-     * this could be an old address if netif->ip_addr has changed */
-    if (!ip_addr_cmp(&(pcb->local_ip), &(netif->ip_addr)))
+    else
     {
-      /* local_ip doesn't match, drop the packet */
-      if (q != p)
-      {
+        /* adding space for header within p succeeded */
+        /* first pbuf q equals given pbuf */
+        q = p;
+        LWIP_DEBUGF(UDP_DEBUG, ("udp_send: added header in given pbuf %p\n", (void *)p));
+    }
+    LWIP_ASSERT("check that first pbuf can hold struct udp_hdr",
+                (q->len >= sizeof(struct udp_hdr)));
+    /* q now represents the packet to be sent */
+    udphdr = q->payload;
+    udphdr->src = htons(pcb->local_port);
+    udphdr->dest = htons(dst_port);
+    /* in UDP, 0 checksum means 'no checksum' */
+    udphdr->chksum = 0x0000;
+
+    /* PCB local address is IP_ANY_ADDR? */
+    if (ip_addr_isany(&pcb->local_ip))
+    {
+        /* use outgoing network interface IP address as source address */
+        src_ip = &(netif->ip_addr);
+    }
+    else
+    {
+        /* check if UDP PCB local IP address is correct
+         * this could be an old address if netif->ip_addr has changed */
+        if (!ip_addr_cmp(&(pcb->local_ip), &(netif->ip_addr)))
+        {
+            /* local_ip doesn't match, drop the packet */
+            if (q != p)
+            {
+                /* free the header pbuf */
+                pbuf_free(q);
+                q = NULL;
+                /* p is still referenced by the caller, and will live on */
+            }
+            return ERR_VAL;
+        }
+        /* use UDP PCB local IP address as source address */
+        src_ip = &(pcb->local_ip);
+    }
+
+    LWIP_DEBUGF(UDP_DEBUG, ("udp_send: sending datagram of length %" U16_F "\n", q->tot_len));
+
+#if LWIP_UDPLITE
+    /* UDP Lite protocol? */
+    if (pcb->flags & UDP_FLAGS_UDPLITE)
+    {
+        u16_t chklen, chklen_hdr;
+        LWIP_DEBUGF(UDP_DEBUG, ("udp_send: UDP LITE packet length %" U16_F "\n", q->tot_len));
+        /* set UDP message length in UDP header */
+        chklen_hdr = chklen = pcb->chksum_len_tx;
+        if ((chklen < sizeof(struct udp_hdr)) || (chklen > q->tot_len))
+        {
+            if (chklen != 0)
+            {
+                LWIP_DEBUGF(UDP_DEBUG, ("udp_send: UDP LITE pcb->chksum_len is illegal: %" U16_F "\n", chklen));
+            }
+            /* For UDP-Lite, checksum length of 0 means checksum
+               over the complete packet. (See RFC 3828 chap. 3.1)
+               At least the UDP-Lite header must be covered by the
+               checksum, therefore, if chksum_len has an illegal
+               value, we generate the checksum over the complete
+               packet to be safe. */
+            chklen_hdr = 0;
+            chklen = q->tot_len;
+        }
+        udphdr->len = htons(chklen_hdr);
+        /* calculate checksum */
+#if CHECKSUM_GEN_UDP
+        udphdr->chksum = inet_chksum_pseudo_partial(q, src_ip, dst_ip,
+                         IP_PROTO_UDPLITE, q->tot_len, chklen);
+        /* chksum zero must become 0xffff, as zero means 'no checksum' */
+        if (udphdr->chksum == 0x0000)
+            udphdr->chksum = 0xffff;
+#endif /* CHECKSUM_CHECK_UDP */
+        /* output to IP */
+        LWIP_DEBUGF(UDP_DEBUG, ("udp_send: ip_output_if (,,,,IP_PROTO_UDPLITE,)\n"));
+#if LWIP_NETIF_HWADDRHINT
+        netif->addr_hint = &(pcb->addr_hint);
+#endif /* LWIP_NETIF_HWADDRHINT*/
+        err = ip_output_if(q, src_ip, dst_ip, pcb->ttl, pcb->tos, IP_PROTO_UDPLITE, netif);
+#if LWIP_NETIF_HWADDRHINT
+        netif->addr_hint = NULL;
+#endif /* LWIP_NETIF_HWADDRHINT*/
+    }
+    else
+#endif /* LWIP_UDPLITE */
+    {
+        /* UDP */
+        LWIP_DEBUGF(UDP_DEBUG, ("udp_send: UDP packet length %" U16_F "\n", q->tot_len));
+        udphdr->len = htons(q->tot_len);
+        /* calculate checksum */
+#if CHECKSUM_GEN_UDP
+        if ((pcb->flags & UDP_FLAGS_NOCHKSUM) == 0)
+        {
+            udphdr->chksum = inet_chksum_pseudo(q, src_ip, dst_ip, IP_PROTO_UDP, q->tot_len);
+            /* chksum zero must become 0xffff, as zero means 'no checksum' */
+            if (udphdr->chksum == 0x0000)
+                udphdr->chksum = 0xffff;
+        }
+#endif /* CHECKSUM_CHECK_UDP */
+        LWIP_DEBUGF(UDP_DEBUG, ("udp_send: UDP checksum 0x%04" X16_F "\n", udphdr->chksum));
+        LWIP_DEBUGF(UDP_DEBUG, ("udp_send: ip_output_if (,,,,IP_PROTO_UDP,)\n"));
+        /* output to IP */
+#if LWIP_NETIF_HWADDRHINT
+        netif->addr_hint = &(pcb->addr_hint);
+#endif /* LWIP_NETIF_HWADDRHINT*/
+        err = ip_output_if(q, src_ip, dst_ip, pcb->ttl, pcb->tos, IP_PROTO_UDP, netif);
+#if LWIP_NETIF_HWADDRHINT
+        netif->addr_hint = NULL;
+#endif /* LWIP_NETIF_HWADDRHINT*/
+    }
+    /* TODO: must this be increased even if error occured? */
+    snmp_inc_udpoutdatagrams();
+
+    /* did we chain a separate header pbuf earlier? */
+    if (q != p)
+    {
         /* free the header pbuf */
         pbuf_free(q);
         q = NULL;
         /* p is still referenced by the caller, and will live on */
-      }
-      return ERR_VAL;
     }
-    /* use UDP PCB local IP address as source address */
-    src_ip = &(pcb->local_ip);
-  }
 
-  LWIP_DEBUGF(UDP_DEBUG, ("udp_send: sending datagram of length %" U16_F "\n", q->tot_len));
-
-#if LWIP_UDPLITE
-  /* UDP Lite protocol? */
-  if (pcb->flags & UDP_FLAGS_UDPLITE)
-  {
-    u16_t chklen, chklen_hdr;
-    LWIP_DEBUGF(UDP_DEBUG, ("udp_send: UDP LITE packet length %" U16_F "\n", q->tot_len));
-    /* set UDP message length in UDP header */
-    chklen_hdr = chklen = pcb->chksum_len_tx;
-    if ((chklen < sizeof(struct udp_hdr)) || (chklen > q->tot_len))
-    {
-      if (chklen != 0)
-      {
-        LWIP_DEBUGF(UDP_DEBUG, ("udp_send: UDP LITE pcb->chksum_len is illegal: %" U16_F "\n", chklen));
-      }
-      /* For UDP-Lite, checksum length of 0 means checksum
-         over the complete packet. (See RFC 3828 chap. 3.1)
-         At least the UDP-Lite header must be covered by the
-         checksum, therefore, if chksum_len has an illegal
-         value, we generate the checksum over the complete
-         packet to be safe. */
-      chklen_hdr = 0;
-      chklen = q->tot_len;
-    }
-    udphdr->len = htons(chklen_hdr);
-    /* calculate checksum */
-#if CHECKSUM_GEN_UDP
-    udphdr->chksum = inet_chksum_pseudo_partial(q, src_ip, dst_ip,
-                                                IP_PROTO_UDPLITE, q->tot_len, chklen);
-    /* chksum zero must become 0xffff, as zero means 'no checksum' */
-    if (udphdr->chksum == 0x0000)
-      udphdr->chksum = 0xffff;
-#endif /* CHECKSUM_CHECK_UDP */
-    /* output to IP */
-    LWIP_DEBUGF(UDP_DEBUG, ("udp_send: ip_output_if (,,,,IP_PROTO_UDPLITE,)\n"));
-#if LWIP_NETIF_HWADDRHINT
-    netif->addr_hint = &(pcb->addr_hint);
-#endif /* LWIP_NETIF_HWADDRHINT*/
-    err = ip_output_if(q, src_ip, dst_ip, pcb->ttl, pcb->tos, IP_PROTO_UDPLITE, netif);
-#if LWIP_NETIF_HWADDRHINT
-    netif->addr_hint = NULL;
-#endif /* LWIP_NETIF_HWADDRHINT*/
-  }
-  else
-#endif /* LWIP_UDPLITE */
-  {    /* UDP */
-    LWIP_DEBUGF(UDP_DEBUG, ("udp_send: UDP packet length %" U16_F "\n", q->tot_len));
-    udphdr->len = htons(q->tot_len);
-    /* calculate checksum */
-#if CHECKSUM_GEN_UDP
-    if ((pcb->flags & UDP_FLAGS_NOCHKSUM) == 0)
-    {
-      udphdr->chksum = inet_chksum_pseudo(q, src_ip, dst_ip, IP_PROTO_UDP, q->tot_len);
-      /* chksum zero must become 0xffff, as zero means 'no checksum' */
-      if (udphdr->chksum == 0x0000)
-        udphdr->chksum = 0xffff;
-    }
-#endif /* CHECKSUM_CHECK_UDP */
-    LWIP_DEBUGF(UDP_DEBUG, ("udp_send: UDP checksum 0x%04" X16_F "\n", udphdr->chksum));
-    LWIP_DEBUGF(UDP_DEBUG, ("udp_send: ip_output_if (,,,,IP_PROTO_UDP,)\n"));
-    /* output to IP */
-#if LWIP_NETIF_HWADDRHINT
-    netif->addr_hint = &(pcb->addr_hint);
-#endif /* LWIP_NETIF_HWADDRHINT*/
-    err = ip_output_if(q, src_ip, dst_ip, pcb->ttl, pcb->tos, IP_PROTO_UDP, netif);
-#if LWIP_NETIF_HWADDRHINT
-    netif->addr_hint = NULL;
-#endif /* LWIP_NETIF_HWADDRHINT*/
-  }
-  /* TODO: must this be increased even if error occured? */
-  snmp_inc_udpoutdatagrams();
-
-  /* did we chain a separate header pbuf earlier? */
-  if (q != p)
-  {
-    /* free the header pbuf */
-    pbuf_free(q);
-    q = NULL;
-    /* p is still referenced by the caller, and will live on */
-  }
-
-  UDP_STATS_INC(udp.xmit);
-  return err;
+    UDP_STATS_INC(udp.xmit);
+    return err;
 }
 
 /**
@@ -608,93 +609,93 @@ err_t udp_sendto_if(struct udp_pcb *pcb, struct pbuf *p,
  */
 err_t udp_bind(struct udp_pcb *pcb, struct ip_addr *ipaddr, u16_t port)
 {
-  struct udp_pcb *ipcb;
-  u8_t rebind;
+    struct udp_pcb *ipcb;
+    u8_t rebind;
 
-  LWIP_DEBUGF(UDP_DEBUG | LWIP_DBG_TRACE | 3, ("udp_bind(ipaddr = "));
-  ip_addr_debug_print(UDP_DEBUG, ipaddr);
-  LWIP_DEBUGF(UDP_DEBUG | LWIP_DBG_TRACE | 3, (", port = %" U16_F ")\n", port));
+    LWIP_DEBUGF(UDP_DEBUG | LWIP_DBG_TRACE | 3, ("udp_bind(ipaddr = "));
+    ip_addr_debug_print(UDP_DEBUG, ipaddr);
+    LWIP_DEBUGF(UDP_DEBUG | LWIP_DBG_TRACE | 3, (", port = %" U16_F ")\n", port));
 
-  rebind = 0;
-  /* Check for double bind and rebind of the same pcb */
-  for (ipcb = udp_pcbs; ipcb != NULL; ipcb = ipcb->next)
-  {
-    /* is this UDP PCB already on active list? */
-    if (pcb == ipcb)
+    rebind = 0;
+    /* Check for double bind and rebind of the same pcb */
+    for (ipcb = udp_pcbs; ipcb != NULL; ipcb = ipcb->next)
     {
-      /* pcb may occur at most once in active list */
-      LWIP_ASSERT("rebind == 0", rebind == 0);
-      /* pcb already in list, just rebind */
-      rebind = 1;
-    }
+        /* is this UDP PCB already on active list? */
+        if (pcb == ipcb)
+        {
+            /* pcb may occur at most once in active list */
+            LWIP_ASSERT("rebind == 0", rebind == 0);
+            /* pcb already in list, just rebind */
+            rebind = 1;
+        }
 
-    /* this code does not allow upper layer to share a UDP port for
-       listening to broadcast or multicast traffic (See SO_REUSE_ADDR and
-       SO_REUSE_PORT under *BSD). TODO: See where it fits instead, OR
-       combine with implementation of UDP PCB flags. Leon Woestenberg. */
+        /* this code does not allow upper layer to share a UDP port for
+           listening to broadcast or multicast traffic (See SO_REUSE_ADDR and
+           SO_REUSE_PORT under *BSD). TODO: See where it fits instead, OR
+           combine with implementation of UDP PCB flags. Leon Woestenberg. */
 #ifdef LWIP_UDP_TODO
-    /* port matches that of PCB in list? */
-    else if ((ipcb->local_port == port) &&
-             /* IP address matches, or one is IP_ADDR_ANY? */
-             (ip_addr_isany(&(ipcb->local_ip)) ||
-              ip_addr_isany(ipaddr) ||
-              ip_addr_cmp(&(ipcb->local_ip), ipaddr)))
-    {
-      /* other PCB already binds to this local IP and port */
-      LWIP_DEBUGF(UDP_DEBUG,
-                  ("udp_bind: local port %" U16_F " already bound by another pcb\n", port));
-      return ERR_USE;
-    }
+        /* port matches that of PCB in list? */
+        else if ((ipcb->local_port == port) &&
+                 /* IP address matches, or one is IP_ADDR_ANY? */
+                 (ip_addr_isany(&(ipcb->local_ip)) ||
+                  ip_addr_isany(ipaddr) ||
+                  ip_addr_cmp(&(ipcb->local_ip), ipaddr)))
+        {
+            /* other PCB already binds to this local IP and port */
+            LWIP_DEBUGF(UDP_DEBUG,
+                        ("udp_bind: local port %" U16_F " already bound by another pcb\n", port));
+            return ERR_USE;
+        }
 #endif
-  }
+    }
 
-  ip_addr_set(&pcb->local_ip, ipaddr);
+    ip_addr_set(&pcb->local_ip, ipaddr);
 
-  /* no port specified? */
-  if (port == 0)
-  {
+    /* no port specified? */
+    if (port == 0)
+    {
 #ifndef UDP_LOCAL_PORT_RANGE_START
 #define UDP_LOCAL_PORT_RANGE_START 4096
 #define UDP_LOCAL_PORT_RANGE_END 0x7fff
 #endif
-    port = UDP_LOCAL_PORT_RANGE_START;
-    ipcb = udp_pcbs;
-    while ((ipcb != NULL) && (port != UDP_LOCAL_PORT_RANGE_END))
-    {
-      if (ipcb->local_port == port)
-      {
-        /* port is already used by another udp_pcb */
-        port++;
-        /* restart scanning all udp pcbs */
+        port = UDP_LOCAL_PORT_RANGE_START;
         ipcb = udp_pcbs;
-      }
-      else
-        /* go on with next udp pcb */
-        ipcb = ipcb->next;
+        while ((ipcb != NULL) && (port != UDP_LOCAL_PORT_RANGE_END))
+        {
+            if (ipcb->local_port == port)
+            {
+                /* port is already used by another udp_pcb */
+                port++;
+                /* restart scanning all udp pcbs */
+                ipcb = udp_pcbs;
+            }
+            else
+                /* go on with next udp pcb */
+                ipcb = ipcb->next;
+        }
+        if (ipcb != NULL)
+        {
+            /* no more ports available in local range */
+            LWIP_DEBUGF(UDP_DEBUG, ("udp_bind: out of free UDP ports\n"));
+            return ERR_USE;
+        }
     }
-    if (ipcb != NULL)
+    pcb->local_port = port;
+    snmp_insert_udpidx_tree(pcb);
+    /* pcb not active yet? */
+    if (rebind == 0)
     {
-      /* no more ports available in local range */
-      LWIP_DEBUGF(UDP_DEBUG, ("udp_bind: out of free UDP ports\n"));
-      return ERR_USE;
+        /* place the PCB on the active list if not already there */
+        pcb->next = udp_pcbs;
+        udp_pcbs = pcb;
     }
-  }
-  pcb->local_port = port;
-  snmp_insert_udpidx_tree(pcb);
-  /* pcb not active yet? */
-  if (rebind == 0)
-  {
-    /* place the PCB on the active list if not already there */
-    pcb->next = udp_pcbs;
-    udp_pcbs = pcb;
-  }
-  LWIP_DEBUGF(UDP_DEBUG | LWIP_DBG_TRACE | LWIP_DBG_STATE,
-              ("udp_bind: bound to %" U16_F ".%" U16_F ".%" U16_F ".%" U16_F ", port %" U16_F "\n",
-               (u16_t)(ntohl(pcb->local_ip.addr) >> 24 & 0xff),
-               (u16_t)(ntohl(pcb->local_ip.addr) >> 16 & 0xff),
-               (u16_t)(ntohl(pcb->local_ip.addr) >> 8 & 0xff),
-               (u16_t)(ntohl(pcb->local_ip.addr) & 0xff), pcb->local_port));
-  return ERR_OK;
+    LWIP_DEBUGF(UDP_DEBUG | LWIP_DBG_TRACE | LWIP_DBG_STATE,
+                ("udp_bind: bound to %" U16_F ".%" U16_F ".%" U16_F ".%" U16_F ", port %" U16_F "\n",
+                 (u16_t)(ntohl(pcb->local_ip.addr) >> 24 & 0xff),
+                 (u16_t)(ntohl(pcb->local_ip.addr) >> 16 & 0xff),
+                 (u16_t)(ntohl(pcb->local_ip.addr) >> 8 & 0xff),
+                 (u16_t)(ntohl(pcb->local_ip.addr) & 0xff), pcb->local_port));
+    return ERR_OK;
 }
 /**
  * Connect an UDP PCB.
@@ -715,61 +716,61 @@ err_t udp_bind(struct udp_pcb *pcb, struct ip_addr *ipaddr, u16_t port)
  */
 err_t udp_connect(struct udp_pcb *pcb, struct ip_addr *ipaddr, u16_t port)
 {
-  struct udp_pcb *ipcb;
+    struct udp_pcb *ipcb;
 
-  if (pcb->local_port == 0)
-  {
-    err_t err = udp_bind(pcb, &pcb->local_ip, pcb->local_port);
-    if (err != ERR_OK)
-      return err;
-  }
+    if (pcb->local_port == 0)
+    {
+        err_t err = udp_bind(pcb, &pcb->local_ip, pcb->local_port);
+        if (err != ERR_OK)
+            return err;
+    }
 
-  ip_addr_set(&pcb->remote_ip, ipaddr);
-  pcb->remote_port = port;
-  pcb->flags |= UDP_FLAGS_CONNECTED;
-/** TODO: this functionality belongs in upper layers */
+    ip_addr_set(&pcb->remote_ip, ipaddr);
+    pcb->remote_port = port;
+    pcb->flags |= UDP_FLAGS_CONNECTED;
+    /** TODO: this functionality belongs in upper layers */
 #ifdef LWIP_UDP_TODO
-  /* Nail down local IP for netconn_addr()/getsockname() */
-  if (ip_addr_isany(&pcb->local_ip) && !ip_addr_isany(&pcb->remote_ip))
-  {
-    struct netif *netif;
-
-    if ((netif = ip_route(&(pcb->remote_ip))) == NULL)
+    /* Nail down local IP for netconn_addr()/getsockname() */
+    if (ip_addr_isany(&pcb->local_ip) && !ip_addr_isany(&pcb->remote_ip))
     {
-      LWIP_DEBUGF(UDP_DEBUG, ("udp_connect: No route to 0x%lx\n", pcb->remote_ip.addr));
-      UDP_STATS_INC(udp.rterr);
-      return ERR_RTE;
+        struct netif *netif;
+
+        if ((netif = ip_route(&(pcb->remote_ip))) == NULL)
+        {
+            LWIP_DEBUGF(UDP_DEBUG, ("udp_connect: No route to 0x%lx\n", pcb->remote_ip.addr));
+            UDP_STATS_INC(udp.rterr);
+            return ERR_RTE;
+        }
+        /** TODO: this will bind the udp pcb locally, to the interface which
+            is used to route output packets to the remote address. However, we
+            might want to accept incoming packets on any interface! */
+        pcb->local_ip = netif->ip_addr;
     }
-    /** TODO: this will bind the udp pcb locally, to the interface which
-        is used to route output packets to the remote address. However, we
-        might want to accept incoming packets on any interface! */
-    pcb->local_ip = netif->ip_addr;
-  }
-  else if (ip_addr_isany(&pcb->remote_ip))
-  {
-    pcb->local_ip.addr = 0;
-  }
+    else if (ip_addr_isany(&pcb->remote_ip))
+    {
+        pcb->local_ip.addr = 0;
+    }
 #endif
-  LWIP_DEBUGF(UDP_DEBUG | LWIP_DBG_TRACE | LWIP_DBG_STATE,
-              ("udp_connect: connected to %" U16_F ".%" U16_F ".%" U16_F ".%" U16_F ",port %" U16_F "\n",
-               (u16_t)(ntohl(pcb->remote_ip.addr) >> 24 & 0xff),
-               (u16_t)(ntohl(pcb->remote_ip.addr) >> 16 & 0xff),
-               (u16_t)(ntohl(pcb->remote_ip.addr) >> 8 & 0xff),
-               (u16_t)(ntohl(pcb->remote_ip.addr) & 0xff), pcb->remote_port));
+    LWIP_DEBUGF(UDP_DEBUG | LWIP_DBG_TRACE | LWIP_DBG_STATE,
+                ("udp_connect: connected to %" U16_F ".%" U16_F ".%" U16_F ".%" U16_F ",port %" U16_F "\n",
+                 (u16_t)(ntohl(pcb->remote_ip.addr) >> 24 & 0xff),
+                 (u16_t)(ntohl(pcb->remote_ip.addr) >> 16 & 0xff),
+                 (u16_t)(ntohl(pcb->remote_ip.addr) >> 8 & 0xff),
+                 (u16_t)(ntohl(pcb->remote_ip.addr) & 0xff), pcb->remote_port));
 
-  /* Insert UDP PCB into the list of active UDP PCBs. */
-  for (ipcb = udp_pcbs; ipcb != NULL; ipcb = ipcb->next)
-  {
-    if (pcb == ipcb)
+    /* Insert UDP PCB into the list of active UDP PCBs. */
+    for (ipcb = udp_pcbs; ipcb != NULL; ipcb = ipcb->next)
     {
-      /* already on the list, just return */
-      return ERR_OK;
+        if (pcb == ipcb)
+        {
+            /* already on the list, just return */
+            return ERR_OK;
+        }
     }
-  }
-  /* PCB not yet on the list, add PCB now */
-  pcb->next = udp_pcbs;
-  udp_pcbs = pcb;
-  return ERR_OK;
+    /* PCB not yet on the list, add PCB now */
+    pcb->next = udp_pcbs;
+    udp_pcbs = pcb;
+    return ERR_OK;
 }
 
 /**
@@ -779,11 +780,11 @@ err_t udp_connect(struct udp_pcb *pcb, struct ip_addr *ipaddr, u16_t port)
  */
 void udp_disconnect(struct udp_pcb *pcb)
 {
-  /* reset remote address association */
-  ip_addr_set(&pcb->remote_ip, IP_ADDR_ANY);
-  pcb->remote_port = 0;
-  /* mark PCB as unconnected */
-  pcb->flags &= ~UDP_FLAGS_CONNECTED;
+    /* reset remote address association */
+    ip_addr_set(&pcb->remote_ip, IP_ADDR_ANY);
+    pcb->remote_port = 0;
+    /* mark PCB as unconnected */
+    pcb->flags &= ~UDP_FLAGS_CONNECTED;
 }
 
 /**
@@ -800,9 +801,9 @@ void udp_recv(struct udp_pcb *pcb,
                            struct ip_addr *addr, u16_t port),
               void *recv_arg)
 {
-  /* remember recv() callback and user data */
-  pcb->recv = recv;
-  pcb->recv_arg = recv_arg;
+    /* remember recv() callback and user data */
+    pcb->recv = recv;
+    pcb->recv_arg = recv_arg;
 }
 
 /**
@@ -815,27 +816,27 @@ void udp_recv(struct udp_pcb *pcb,
  */
 void udp_remove(struct udp_pcb *pcb)
 {
-  struct udp_pcb *pcb2;
+    struct udp_pcb *pcb2;
 
-  snmp_delete_udpidx_tree(pcb);
-  /* pcb to be removed is first in list? */
-  if (udp_pcbs == pcb)
-  {
-    /* make list start at 2nd pcb */
-    udp_pcbs = udp_pcbs->next;
-    /* pcb not 1st in list */
-  }
-  else
-    for (pcb2 = udp_pcbs; pcb2 != NULL; pcb2 = pcb2->next)
+    snmp_delete_udpidx_tree(pcb);
+    /* pcb to be removed is first in list? */
+    if (udp_pcbs == pcb)
     {
-      /* find pcb in udp_pcbs list */
-      if (pcb2->next != NULL && pcb2->next == pcb)
-      {
-        /* remove pcb from list */
-        pcb2->next = pcb->next;
-      }
+        /* make list start at 2nd pcb */
+        udp_pcbs = udp_pcbs->next;
+        /* pcb not 1st in list */
     }
-  memp_free(MEMP_UDP_PCB, pcb);
+    else
+        for (pcb2 = udp_pcbs; pcb2 != NULL; pcb2 = pcb2->next)
+        {
+            /* find pcb in udp_pcbs list */
+            if (pcb2->next != NULL && pcb2->next == pcb)
+            {
+                /* remove pcb from list */
+                pcb2->next = pcb->next;
+            }
+        }
+    memp_free(MEMP_UDP_PCB, pcb);
 }
 
 /**
@@ -849,19 +850,19 @@ void udp_remove(struct udp_pcb *pcb)
 struct udp_pcb *
 udp_new(void)
 {
-  struct udp_pcb *pcb;
-  pcb = memp_malloc(MEMP_UDP_PCB);
-  /* could allocate UDP PCB? */
-  if (pcb != NULL)
-  {
-    /* UDP Lite: by initializing to all zeroes, chksum_len is set to 0
-     * which means checksum is generated over the whole datagram per default
-     * (recommended as default by RFC 3828). */
-    /* initialize PCB to all zeroes */
-    memset(pcb, 0, sizeof(struct udp_pcb));
-    pcb->ttl = UDP_TTL;
-  }
-  return pcb;
+    struct udp_pcb *pcb;
+    pcb = memp_malloc(MEMP_UDP_PCB);
+    /* could allocate UDP PCB? */
+    if (pcb != NULL)
+    {
+        /* UDP Lite: by initializing to all zeroes, chksum_len is set to 0
+         * which means checksum is generated over the whole datagram per default
+         * (recommended as default by RFC 3828). */
+        /* initialize PCB to all zeroes */
+        memset(pcb, 0, sizeof(struct udp_pcb));
+        pcb->ttl = UDP_TTL;
+    }
+    return pcb;
 }
 
 #if UDP_DEBUG
@@ -872,14 +873,14 @@ udp_new(void)
  */
 void udp_debug_print(struct udp_hdr *udphdr)
 {
-  LWIP_DEBUGF(UDP_DEBUG, ("UDP header:\n"));
-  LWIP_DEBUGF(UDP_DEBUG, ("+-------------------------------+\n"));
-  LWIP_DEBUGF(UDP_DEBUG, ("|     %5" U16_F "     |     %5" U16_F "     | (src port, dest port)\n",
-                          ntohs(udphdr->src), ntohs(udphdr->dest)));
-  LWIP_DEBUGF(UDP_DEBUG, ("+-------------------------------+\n"));
-  LWIP_DEBUGF(UDP_DEBUG, ("|     %5" U16_F "     |     0x%04" X16_F "    | (len, chksum)\n",
-                          ntohs(udphdr->len), ntohs(udphdr->chksum)));
-  LWIP_DEBUGF(UDP_DEBUG, ("+-------------------------------+\n"));
+    LWIP_DEBUGF(UDP_DEBUG, ("UDP header:\n"));
+    LWIP_DEBUGF(UDP_DEBUG, ("+-------------------------------+\n"));
+    LWIP_DEBUGF(UDP_DEBUG, ("|     %5" U16_F "     |     %5" U16_F "     | (src port, dest port)\n",
+                            ntohs(udphdr->src), ntohs(udphdr->dest)));
+    LWIP_DEBUGF(UDP_DEBUG, ("+-------------------------------+\n"));
+    LWIP_DEBUGF(UDP_DEBUG, ("|     %5" U16_F "     |     0x%04" X16_F "    | (len, chksum)\n",
+                            ntohs(udphdr->len), ntohs(udphdr->chksum)));
+    LWIP_DEBUGF(UDP_DEBUG, ("+-------------------------------+\n"));
 }
 #endif /* UDP_DEBUG */
 

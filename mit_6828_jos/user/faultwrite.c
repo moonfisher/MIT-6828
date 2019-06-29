@@ -4,5 +4,5 @@
 
 void umain(int argc, char **argv)
 {
-	*(unsigned *)0 = 0;
+    *(unsigned *)0 = 0;
 }

@@ -71,8 +71,8 @@ extern "C"
 #define SNMP_GENTRAP_AUTHFAIL 4
 #define SNMP_GENTRAP_ENTERPRISESPC 6
 
-  struct snmp_varbind
-  {
+struct snmp_varbind
+{
     /* next pointer, NULL for last in list */
     struct snmp_varbind *next;
     /* previous pointer, NULL for first in list */
@@ -102,10 +102,10 @@ extern "C"
     u16_t olen;
     /* encoding object value length */
     u16_t vlen;
-  };
+};
 
-  struct snmp_varbind_root
-  {
+struct snmp_varbind_root
+{
     struct snmp_varbind *head;
     struct snmp_varbind *tail;
     /* number of variable bindings in list */
@@ -114,11 +114,11 @@ extern "C"
     u8_t seqlenlen;
     /* encoding varbind-list seq length */
     u16_t seqlen;
-  };
+};
 
-  /** output response message header length fields */
-  struct snmp_resp_header_lengths
-  {
+/** output response message header length fields */
+struct snmp_resp_header_lengths
+{
     /* encoding error-index length length */
     u8_t erridxlenlen;
     /* encoding error-status length length */
@@ -148,11 +148,11 @@ extern "C"
     u16_t verlen;
     /* encoding sequence length */
     u16_t seqlen;
-  };
+};
 
-  /** output response message header length fields */
-  struct snmp_trap_header_lengths
-  {
+/** output response message header length fields */
+struct snmp_trap_header_lengths
+{
     /* encoding timestamp length length */
     u8_t tslenlen;
     /* encoding specific-trap length length */
@@ -190,7 +190,7 @@ extern "C"
     u16_t verlen;
     /* encoding sequence length */
     u16_t seqlen;
-  };
+};
 
 /* Accepting new SNMP messages. */
 #define SNMP_MSG_EMPTY 0
@@ -213,8 +213,8 @@ extern "C"
 #define SNMP_MSG_EXTERNAL_SET_VALUE 11
 
 #define SNMP_COMMUNITY_STR_LEN 64
-  struct snmp_msg_pstat
-  {
+struct snmp_msg_pstat
+{
     /* lwIP local port (161) binding */
     struct udp_pcb *pcb;
     /* source IP address */
@@ -250,10 +250,10 @@ extern "C"
     struct snmp_varbind_root outvb;
     /* output response lengths used in ASN encoding */
     struct snmp_resp_header_lengths rhl;
-  };
+};
 
-  struct snmp_msg_trap
-  {
+struct snmp_msg_trap
+{
     /* lwIP local port (161) binding */
     struct udp_pcb *pcb;
     /* destination IP address in network order */
@@ -273,33 +273,33 @@ extern "C"
     struct snmp_varbind_root outvb;
     /* output trap lengths used in ASN encoding */
     struct snmp_trap_header_lengths thl;
-  };
+};
 
-  /** Agent Version constant, 0 = v1 oddity */
-  extern const s32_t snmp_version;
-  /** Agent default "public" community string */
-  extern const char snmp_publiccommunity[7];
+/** Agent Version constant, 0 = v1 oddity */
+extern const s32_t snmp_version;
+/** Agent default "public" community string */
+extern const char snmp_publiccommunity[7];
 
-  extern struct snmp_msg_trap trap_msg;
+extern struct snmp_msg_trap trap_msg;
 
-  /** Agent setup, start listening to port 161. */
-  void snmp_init(void);
-  void snmp_trap_dst_enable(u8_t dst_idx, u8_t enable);
-  void snmp_trap_dst_ip_set(u8_t dst_idx, struct ip_addr *dst);
+/** Agent setup, start listening to port 161. */
+void snmp_init(void);
+void snmp_trap_dst_enable(u8_t dst_idx, u8_t enable);
+void snmp_trap_dst_ip_set(u8_t dst_idx, struct ip_addr *dst);
 
-  /** Varbind-list functions. */
-  struct snmp_varbind *snmp_varbind_alloc(struct snmp_obj_id *oid, u8_t type, u8_t len);
-  void snmp_varbind_free(struct snmp_varbind *vb);
-  void snmp_varbind_list_free(struct snmp_varbind_root *root);
-  void snmp_varbind_tail_add(struct snmp_varbind_root *root, struct snmp_varbind *vb);
-  struct snmp_varbind *snmp_varbind_tail_remove(struct snmp_varbind_root *root);
+/** Varbind-list functions. */
+struct snmp_varbind *snmp_varbind_alloc(struct snmp_obj_id *oid, u8_t type, u8_t len);
+void snmp_varbind_free(struct snmp_varbind *vb);
+void snmp_varbind_list_free(struct snmp_varbind_root *root);
+void snmp_varbind_tail_add(struct snmp_varbind_root *root, struct snmp_varbind *vb);
+struct snmp_varbind *snmp_varbind_tail_remove(struct snmp_varbind_root *root);
 
-  /** Handle an internal (recv) or external (private response) event. */
-  void snmp_msg_event(u8_t request_id);
-  err_t snmp_send_response(struct snmp_msg_pstat *m_stat);
-  err_t snmp_send_trap(s8_t generic_trap, struct snmp_obj_id *eoid, s32_t specific_trap);
-  void snmp_coldstart_trap(void);
-  void snmp_authfail_trap(void);
+/** Handle an internal (recv) or external (private response) event. */
+void snmp_msg_event(u8_t request_id);
+err_t snmp_send_response(struct snmp_msg_pstat *m_stat);
+err_t snmp_send_trap(s8_t generic_trap, struct snmp_obj_id *eoid, s32_t specific_trap);
+void snmp_coldstart_trap(void);
+void snmp_authfail_trap(void);
 
 #ifdef __cplusplus
 }

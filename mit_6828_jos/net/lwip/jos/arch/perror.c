@@ -3,7 +3,8 @@
 #include <arch/perror.h>
 #include <lwip/arch.h>
 
-const char *sys_errlist[] = {
+const char *sys_errlist[] =
+{
     [EPERM] = "EPERM",               /* Operation not permitted */
     [ENOENT] = "ENOENT",             /* No such file or directory */
     [ESRCH] = "ESRCH",               /* No such process */
@@ -155,12 +156,12 @@ const char *sys_errlist[] = {
 
 void perror(const char *s)
 {
-  int err = errno;
-  cprintf("%s: %s\n", s, e2s(err));
+    int err = errno;
+    cprintf("%s: %s\n", s, e2s(err));
 }
 
 const char *
 e2s(int err)
 {
-  return sys_errlist[err];
+    return sys_errlist[err];
 }

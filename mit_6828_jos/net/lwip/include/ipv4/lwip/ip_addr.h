@@ -42,12 +42,12 @@ extern "C"
 #ifdef PACK_STRUCT_USE_INCLUDES
 #include "arch/bpstruct.h"
 #endif
-  PACK_STRUCT_BEGIN
-  struct ip_addr
-  {
+PACK_STRUCT_BEGIN
+struct ip_addr
+{
     PACK_STRUCT_FIELD(u32_t addr);
-  } PACK_STRUCT_STRUCT;
-  PACK_STRUCT_END
+} PACK_STRUCT_STRUCT;
+PACK_STRUCT_END
 #ifdef PACK_STRUCT_USE_INCLUDES
 #include "arch/epstruct.h"
 #endif
@@ -59,20 +59,20 @@ extern "C"
 #ifdef PACK_STRUCT_USE_INCLUDES
 #include "arch/bpstruct.h"
 #endif
-  PACK_STRUCT_BEGIN
-  struct ip_addr2
-  {
+PACK_STRUCT_BEGIN
+struct ip_addr2
+{
     PACK_STRUCT_FIELD(u16_t addrw[2]);
-  } PACK_STRUCT_STRUCT;
-  PACK_STRUCT_END
+} PACK_STRUCT_STRUCT;
+PACK_STRUCT_END
 #ifdef PACK_STRUCT_USE_INCLUDES
 #include "arch/epstruct.h"
 #endif
 
-  struct netif;
+struct netif;
 
-  extern const struct ip_addr ip_addr_any;
-  extern const struct ip_addr ip_addr_broadcast;
+extern const struct ip_addr ip_addr_any;
+extern const struct ip_addr ip_addr_broadcast;
 
 /** IP_ADDR_ can be used as a fixed IP address
  *  for the wildcard and the broadcast address
@@ -83,10 +83,10 @@ extern "C"
 #define INADDR_NONE ((u32_t)0xffffffffUL)     /* 255.255.255.255 */
 #define INADDR_LOOPBACK ((u32_t)0x7f000001UL) /* 127.0.0.1 */
 
-  /* Definitions of the bits in an Internet address integer.
+/* Definitions of the bits in an Internet address integer.
 
-   On subnets, host and network parts are found according to
-   the subnet mask, not these masks.  */
+ On subnets, host and network parts are found according to
+ the subnet mask, not these masks.  */
 
 #define IN_CLASSA(a) ((((u32_t)(a)) & 0x80000000UL) == 0)
 #define IN_CLASSA_NET 0xff000000
@@ -140,7 +140,7 @@ extern "C"
 
 #define ip_addr_isany(addr1) ((addr1) == NULL || (addr1)->addr == 0)
 
-  u8_t ip_addr_isbroadcast(struct ip_addr *, struct netif *);
+u8_t ip_addr_isbroadcast(struct ip_addr *, struct netif *);
 
 #define ip_addr_ismulticast(addr1) (((addr1)->addr & ntohl(0xf0000000UL)) == ntohl(0xe0000000UL))
 

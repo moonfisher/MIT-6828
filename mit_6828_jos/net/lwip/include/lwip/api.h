@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2001-2004 Swedish Institute of Computer Science.
- * All rights reserved. 
- * 
- * Redistribution and use in source and binary forms, with or without modification, 
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
  *
  * 1. Redistributions of source code must retain the above copyright notice,
@@ -11,21 +11,21 @@
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
  * 3. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission. 
+ *    derived from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED 
- * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
- * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT 
- * SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT 
- * OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING 
- * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY 
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
+ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT
+ * SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
+ * OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+ * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
  * OF SUCH DAMAGE.
  *
  * This file is part of the lwIP TCP/IP stack.
- * 
+ *
  * Author: Adam Dunkels <adam@sics.se>
  *
  */
@@ -60,8 +60,8 @@ extern "C"
 #define NETCONNTYPE_GROUP(t) (t & 0xF0)
 #define NETCONNTYPE_DATAGRAM(t) (t & 0xE0)
 
-  enum netconn_type
-  {
+enum netconn_type
+{
     NETCONN_INVALID = 0,
     /* NETCONN_TCP Group */
     NETCONN_TCP = 0x10,
@@ -71,56 +71,57 @@ extern "C"
     NETCONN_UDPNOCHKSUM = 0x22,
     /* NETCONN_RAW Group */
     NETCONN_RAW = 0x40
-  };
+};
 
-  enum netconn_state
-  {
+enum netconn_state
+{
     NETCONN_NONE,
     NETCONN_WRITE,
     NETCONN_LISTEN,
     NETCONN_CONNECT,
     NETCONN_CLOSE
-  };
+};
 
-  enum netconn_evt
-  {
+enum netconn_evt
+{
     NETCONN_EVT_RCVPLUS,
     NETCONN_EVT_RCVMINUS,
     NETCONN_EVT_SENDPLUS,
     NETCONN_EVT_SENDMINUS
-  };
+};
 
 #if LWIP_IGMP
-  enum netconn_igmp
-  {
+enum netconn_igmp
+{
     NETCONN_JOIN,
     NETCONN_LEAVE
-  };
+};
 #endif /* LWIP_IGMP */
 
-  /* forward-declare some structs to avoid to include their headers */
-  struct ip_pcb;
-  struct tcp_pcb;
-  struct udp_pcb;
-  struct raw_pcb;
-  struct netconn;
+/* forward-declare some structs to avoid to include their headers */
+struct ip_pcb;
+struct tcp_pcb;
+struct udp_pcb;
+struct raw_pcb;
+struct netconn;
 
-  /** A callback prototype to inform about events for a netconn */
-  typedef void (*netconn_callback)(struct netconn *, enum netconn_evt, u16_t len);
+/** A callback prototype to inform about events for a netconn */
+typedef void (*netconn_callback)(struct netconn *, enum netconn_evt, u16_t len);
 
-  /** A netconn descriptor */
-  struct netconn
-  {
+/** A netconn descriptor */
+struct netconn
+{
     /** type of the netconn (TCP, UDP or RAW) */
     enum netconn_type type;
     /** current state of the netconn */
     enum netconn_state state;
     /** the lwIP internal protocol control block */
-    union {
-      struct ip_pcb *ip;
-      struct tcp_pcb *tcp;
-      struct udp_pcb *udp;
-      struct raw_pcb *raw;
+    union
+    {
+        struct ip_pcb *ip;
+        struct tcp_pcb *tcp;
+        struct udp_pcb *udp;
+        struct raw_pcb *raw;
     } pcb;
     /** the last error this netconn had */
     err_t err;
@@ -158,7 +159,7 @@ extern "C"
 #endif /* LWIP_TCPIP_CORE_LOCKING */
     /** A callback function that is informed about events for this netconn */
     netconn_callback callback;
-  };
+};
 
 /* Register an Network connection event */
 #define API_EVENT(c, e, l)   \
@@ -170,48 +171,48 @@ extern "C"
 /* Network connection functions: */
 #define netconn_new(t) netconn_new_with_proto_and_callback(t, 0, NULL)
 #define netconn_new_with_callback(t, c) netconn_new_with_proto_and_callback(t, 0, c)
-  struct
-      netconn *
-      netconn_new_with_proto_and_callback(enum netconn_type t, u8_t proto,
-                                          netconn_callback callback);
-  err_t netconn_delete(struct netconn *conn);
-  enum netconn_type netconn_type(struct netconn *conn);
+struct
+    netconn *
+netconn_new_with_proto_and_callback(enum netconn_type t, u8_t proto,
+                                    netconn_callback callback);
+err_t netconn_delete(struct netconn *conn);
+enum netconn_type netconn_type(struct netconn *conn);
 
-  err_t netconn_getaddr(struct netconn *conn,
-                        struct ip_addr *addr,
-                        u16_t *port,
-                        u8_t local);
+err_t netconn_getaddr(struct netconn *conn,
+                      struct ip_addr *addr,
+                      u16_t *port,
+                      u8_t local);
 #define netconn_peer(c, i, p) netconn_getaddr(c, i, p, 0)
 #define netconn_addr(c, i, p) netconn_getaddr(c, i, p, 1)
 
-  err_t netconn_bind(struct netconn *conn,
-                     struct ip_addr *addr,
-                     u16_t port);
-  err_t netconn_connect(struct netconn *conn,
-                        struct ip_addr *addr,
-                        u16_t port);
-  err_t netconn_disconnect(struct netconn *conn);
-  err_t netconn_listen_with_backlog(struct netconn *conn, u8_t backlog);
+err_t netconn_bind(struct netconn *conn,
+                   struct ip_addr *addr,
+                   u16_t port);
+err_t netconn_connect(struct netconn *conn,
+                      struct ip_addr *addr,
+                      u16_t port);
+err_t netconn_disconnect(struct netconn *conn);
+err_t netconn_listen_with_backlog(struct netconn *conn, u8_t backlog);
 #define netconn_listen(conn) netconn_listen_with_backlog(conn, TCP_DEFAULT_LISTEN_BACKLOG)
-  struct netconn *netconn_accept(struct netconn *conn);
-  struct netbuf *netconn_recv(struct netconn *conn);
-  err_t netconn_sendto(struct netconn *conn,
-                       struct netbuf *buf, struct ip_addr *addr, u16_t port);
-  err_t netconn_send(struct netconn *conn,
-                     struct netbuf *buf);
-  err_t netconn_write(struct netconn *conn,
-                      const void *dataptr, int size,
-                      u8_t apiflags);
-  err_t netconn_close(struct netconn *conn);
+struct netconn *netconn_accept(struct netconn *conn);
+struct netbuf *netconn_recv(struct netconn *conn);
+err_t netconn_sendto(struct netconn *conn,
+                     struct netbuf *buf, struct ip_addr *addr, u16_t port);
+err_t netconn_send(struct netconn *conn,
+                   struct netbuf *buf);
+err_t netconn_write(struct netconn *conn,
+                    const void *dataptr, int size,
+                    u8_t apiflags);
+err_t netconn_close(struct netconn *conn);
 
 #if LWIP_IGMP
-  err_t netconn_join_leave_group(struct netconn *conn,
-                                 struct ip_addr *multiaddr,
-                                 struct ip_addr *interface,
-                                 enum netconn_igmp join_or_leave);
+err_t netconn_join_leave_group(struct netconn *conn,
+                               struct ip_addr *multiaddr,
+                               struct ip_addr *interface,
+                               enum netconn_igmp join_or_leave);
 #endif /* LWIP_IGMP */
 #if LWIP_DNS
-  err_t netconn_gethostbyname(const char *name, struct ip_addr *addr);
+err_t netconn_gethostbyname(const char *name, struct ip_addr *addr);
 #endif /* LWIP_DNS */
 
 #define netconn_err(conn) ((conn)->err)
